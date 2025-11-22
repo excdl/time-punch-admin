@@ -1,377 +1,173 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>奇可智能打卡系統</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-body { 
-    font-family: Arial; 
-    display:flex; 
-    justify-content:center; 
-    padding:20px; 
-    background:#f5f6fa;
-    margin:0;
-}
-#controlPanel {
-    background:white;
-    padding:25px 20px;
-    border-radius:15px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.1);
-    width:95%;
-    max-width:500px;
-    display:flex;
-    flex-direction:column;
-    gap:20px;
-    align-items:center;
-    box-sizing:border-box;
-}
+body { font-family: Arial; background:#f5f6fa; margin:0; padding:20px; display:flex; justify-content:center;}
+#controlPanel { background:white; padding:25px 20px; border-radius:15px; box-shadow:0 8px 20px rgba(0,0,0,0.1); width:95%; max-width:500px; display:flex; flex-direction:column; gap:20px; align-items:center; }
 #userInfo { text-align:center; font-size:26px; font-weight:bold; }
 #statusInfo { text-align:center; font-size:23px; padding:5px 15px; border-radius:20px; display:inline-block; }
 #dateTime { text-align:center; font-size:22px; }
-.buttons-container {
-    display:flex;
-    gap:10px;
-    width:100%;
-    flex-wrap:nowrap;
-}
-.buttons-container button { 
-    flex:1 1 0;
-    min-width:80px;
-    padding:10px 0; 
-    font-size:25px; 
-    border-radius:8px; 
-    cursor:pointer; 
-    font-weight:bold; 
-    border:none;
-    white-space:nowrap; 
-    transition: all 0.2s ease;
-}
-.buttons-container button:hover{
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-}
-.buttons-container button:active{
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
+.buttons-container { display:flex; gap:10px; width:100%; flex-wrap:nowrap; }
+.buttons-container button { flex:1 1 0; min-width:80px; padding:10px 0; font-size:25px; border-radius:8px; cursor:pointer; font-weight:bold; border:none; white-space:nowrap; transition: all 0.2s ease;}
+.buttons-container button:hover{transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1);}
+.buttons-container button:active{transform: translateY(1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08);}
 #btnStart { background: linear-gradient(145deg, #3498db, #2980b9); color:white; } 
 #btnEnd { background: linear-gradient(145deg, #2ecc71, #27ae60); color:white; }   
-
-#countdownWrapper { width:120px; height:120px; position:relative; display:none; }
-#circleProgress { fill:none; stroke-width:12; stroke-linecap:round; transform: rotate(-90deg); transform-origin: 50% 50%; }
-#countdownText { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-weight:bold; white-space:nowrap; }
-
 #querySection { width:100%; display:flex; flex-direction:column; gap:10px; }
-#querySection .queryRow {
-    display:flex; 
-    gap:10px;
-    width:100%;
-    flex-wrap:nowrap; 
-    align-items:center;
-}
-#querySection input[type="date"] {
-    flex:1 1 auto; 
-    min-width:100px;
-    padding:8px 10px; 
-    font-size:14px; 
-    border-radius:6px; 
-    border:1px solid #ccc;
-    box-sizing:border-box;
-}
-#querySection button {
-    flex:1 1 0; 
-    padding:8px 0;
-    font-size:14px;
-    font-weight:bold;
-    border-radius:6px;
-    border:none;
-    cursor:pointer;
-    white-space:nowrap;
-}
+#querySection .queryRow { display:flex; gap:10px; width:100%; flex-wrap:nowrap; align-items:center;}
+#querySection input[type="date"] { flex:1 1 auto; min-width:100px; padding:8px 10px; font-size:14px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+#querySection button { flex:1 1 0; padding:8px 0; font-size:14px; font-weight:bold; border-radius:6px; border:none; cursor:pointer; white-space:nowrap;}
 #btnQuery { background:#d3d3d3; color:black; }  
 #btnReturn { background:#d3d3d3; color:black; }  
-
-#todayRecords {
-    border:1px solid #ccc; 
-    border-radius:8px; 
-    padding:10px; 
-    min-height:50px; 
-    font-size:16px; 
-    background: #fafafa;
-    width:100%; 
-    box-sizing:border-box;
-}
-
-/* 管理者登入按鈕 */
-#btnAdminLogin {
-    width:100%;
-    padding:12px 0;
-    font-size:18px;
-    font-weight:bold;
-    border-radius:10px;
-    background:linear-gradient(145deg,#f39c12,#d35400);
-    color:white;
-    cursor:pointer;
-    border:none;
-}
-#btnAdminLogin:hover{
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
+#todayRecords { border:1px solid #ccc; border-radius:8px; padding:10px; min-height:50px; font-size:16px; background: #fafafa; width:100%; box-sizing:border-box;}
+#adminPanel { display:none; width:100%; margin-top:20px; text-align:center;}
+#recordsTable { width:100%; border-collapse: collapse; margin-top:10px;}
+#recordsTable th, #recordsTable td { border:1px solid #ccc; padding:5px; font-size:14px;}
 </style>
 </head>
 <body>
 
 <div id="controlPanel">
-    <div id="userInfo">正在獲取使用者資訊...</div>
-    <div id="statusInfo"></div>
-    <div id="dateTime">載入中…</div>
+  <div id="userInfo">載入中...</div>
+  <div id="statusInfo"></div>
+  <div id="dateTime">載入中…</div>
 
-    <!-- 打卡按鈕 -->
-    <div class="buttons-container">
-        <button id="btnStart">上班</button>
-        <button id="btnEnd">下班</button>
+  <div class="buttons-container">
+    <button id="btnStart">上班</button>
+    <button id="btnEnd">下班</button>
+  </div>
+
+  <div id="querySection">
+    <div class="queryRow">
+      <input type="date" id="queryDate">
+      <button id="btnQuery" onclick="searchDateRecords()">查詢</button>
+      <button id="btnReturn" onclick="clearSearch()">返回</button>
     </div>
+    <div id="todayRecords">今日打卡紀錄：</div>
+  </div>
 
-    <!-- 倒數動畫 -->
-    <div id="countdownWrapper">
-        <svg width="120" height="120">
-            <circle id="circleProgress" cx="60" cy="60" r="50"></circle>
-        </svg>
-        <div id="countdownText">打卡中...</div>
-    </div>
-
-    <!-- 查詢區塊 -->
-    <div id="querySection">
-        <div class="queryRow">
-            <input type="date" id="queryDate">
-            <button id="btnQuery" onclick="searchDateRecords()">查詢</button>
-            <button id="btnReturn" onclick="clearSearch()">返回</button>
-        </div>
-        <div id="todayRecords">今日打卡紀錄：</div>
-    </div>
-
-    <!-- 管理者登入 -->
-    <button id="btnAdminLogin" onclick="adminLogin()">管理者登入</button>
+  <div id="adminPanel">
+    <h3>管理員打卡查詢</h3>
+    <label>日期：<input type="date" id="adminQueryDate"></label>
+    <button onclick="queryRecords()">查詢</button>
+    <button onclick="downloadCSV()">下載 CSV</button>
+    <table id="recordsTable">
+      <thead>
+        <tr><th>帳號</th><th>姓名</th><th>日期</th><th>時間</th><th>狀態</th><th>IP</th><th>補打卡</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxvJ6BwbnlfBP6c3jBBFPSR-4nT7Oc-lIcZ7YtP93OtlsM8_X_OMw9foWnMTgOPNdL2/exec";
+const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwcE0gyMl-Cb-Cim8y2So9a76-UXJdMU3nC5sqiXz6a0V49waXAFKo5sMpl3-AbQkovQg/exec";  // 請換成 GAS 部署網址
+let COMPANY_IPS = [];
 
-// ====== 更新日期時間 ======
-function updateDateTime() {
-    const now = new Date();
-    document.getElementById("dateTime").textContent =
-        now.toLocaleString("zh-TW", { hour12: false });
-}
-setInterval(updateDateTime, 1000);
-updateDateTime();
+function updateDateTime() { document.getElementById("dateTime").textContent = new Date().toLocaleString("zh-TW",{hour12:false});}
+setInterval(updateDateTime,1000); updateDateTime();
 
-// ====== 取得 IP ======
 async function getIP() {
-    const cache = sessionStorage.getItem("myIP");
-    if (cache) return cache;
-    try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        sessionStorage.setItem("myIP", data.ip);
-        return data.ip;
-    } catch {
-        return "";
-    }
+  const cache = sessionStorage.getItem("myIP");
+  if(cache) return cache;
+  try { const res = await fetch("https://api.ipify.org?format=json"); const data = await res.json(); sessionStorage.setItem("myIP", data.ip); return data.ip;} catch { return ""; }
 }
 
-// ====== 時間格式處理 ======
-function fixTimeFormat(t) {
-    if (typeof t === "string" && t.includes(":") && !t.includes("T")) return t;
-    if (typeof t === "string" && t.includes("T"))
-        return new Date(t).toLocaleTimeString("zh-TW", { hour12: false });
-    if (!isNaN(t)) {
-        const d = new Date((t - 25569) * 86400 * 1000);
-        return d.toLocaleTimeString("zh-TW", { hour12: false });
-    }
-    return t;
+async function updateUserInfo(){
+  await liff.init({liffId:"2008549731-Zkv32GPr"});
+  if(!liff.isLoggedIn()) await liff.login();
+  const profile = await liff.getProfile();
+  const ip = await getIP();
+  window.userId = profile.userId;
+  window.userName = profile.displayName;
+  document.getElementById("userInfo").textContent=`${window.userName} 您好`;
+
+  // 取得公司 IP
+  const res = await fetch(API_ENDPOINT+"?action=getAdminIP");
+  COMPANY_IPS = await res.json();
+
+  const s = document.getElementById("statusInfo");
+  const isCompany = COMPANY_IPS.includes(ip);
+  s.textContent = isCompany?"公司網路":"非公司網路";
+  s.style.color = isCompany?"#008000":"#FF0000";
+  s.style.backgroundColor=isCompany?"rgba(144,238,144,0.6)":"rgba(255,182,193,0.3)";
+  s.style.padding="5px 15px"; s.style.borderRadius="20px"; s.style.display="inline-block"; s.style.fontWeight="bold";
+
+  // 啟用打卡按鈕
+  document.getElementById("btnStart").disabled=false;
+  document.getElementById("btnEnd").disabled=false;
+
+  // 管理員判斷
+  const adminRes = await fetch(API_ENDPOINT+"?action=getAdminAccount&userId="+window.userId);
+  const adminData = await adminRes.json();
+  if(adminData.length>0) document.getElementById("adminPanel").style.display="block";
 }
 
-// ===== 按鈕 =====
-const btnStart   = document.getElementById("btnStart");
-const btnEnd     = document.getElementById("btnEnd");
-btnStart.disabled = true;
-btnEnd.disabled = true;
+document.addEventListener("DOMContentLoaded", async()=>{ await updateUserInfo(); await updateTodayRecords(); });
 
-window.userReady = false;
-
-// ===== 主要：取得使用者資訊 =====
-async function updateUserInfo() {
-    const liffInit = liff.init({ liffId: "2008504718-nmXP0WRV" });
-    if (!liff.isLoggedIn()) { await liff.login(); }
-
-    const profile = await liff.getProfile();
-    const ip = await getIP();
-
-    window.userId = profile.userId;
-    window.userName = profile.displayName;
-
-    document.getElementById("userInfo").textContent = `${window.userName} 您好`;
-
-    // 網路狀態（顯示文字即可，不影響打卡）
-    const s = document.getElementById("statusInfo");
-    s.textContent = "網路已連線";
-    s.style.color = "#008000";
-    s.style.backgroundColor = "rgba(144,238,144,0.6)";
-    s.style.padding = "5px 15px";
-    s.style.borderRadius = "20px";
-    s.style.display = "inline-block";
-    s.style.fontWeight = "bold";
-
-    btnStart.disabled = false;
-    btnEnd.disabled = false;
-    window.userReady = true;
+async function performClockIn(status){
+  const ip = await getIP();
+  const res = await fetch(API_ENDPOINT,{
+    method:"POST",
+    body: JSON.stringify({userId:window.userId, displayName:window.userName, status, ip})
+  });
+  const data = await res.json();
+  Swal.fire({title:data.message, timer:1500, showConfirmButton:false});
+  updateTodayRecords();
 }
 
-// ===== 打卡函式 =====
-async function performClockIn(status) {
-    if (!window.userReady) {
-        Swal.fire({ icon:"info", title:"請稍候", html:"使用者資料尚未載入", timer:1500, showConfirmButton:false });
-        return;
-    }
+document.getElementById("btnStart").onclick=()=>performClockIn("上班");
+document.getElementById("btnEnd").onclick=()=>performClockIn("下班");
 
-    const wrapper = document.getElementById("countdownWrapper");
-    const circle = document.getElementById("circleProgress");
-    const text = document.getElementById("countdownText");
-    wrapper.style.display = "block";
-    text.textContent = "打卡中...";
+function clearSearch(){ document.getElementById("queryDate").value=""; updateTodayRecords(); }
 
-    const colors = {
-        上班: { start: { r:52, g:152, b:219 }, end: { r:41, g:128, b:185 } },
-        下班: { start: { r:46, g:204, b:113 }, end: { r:39, g:174, b:96 } }
-    };
-    const { start: startColor, end: endColor } = colors[status];
-
-    const radius = 60;
-    const circumference = 2 * Math.PI * radius;
-    circle.style.strokeDasharray = circumference;
-    circle.style.strokeDashoffset = circumference;
-
-    let progress = 0;
-    function animate() {
-        progress = Math.min(progress + 0.005, 1);
-        circle.style.strokeDashoffset = circumference * (1 - progress);
-
-        const rC = Math.round(startColor.r*(1-progress) + endColor.r*progress);
-        const gC = Math.round(startColor.g*(1-progress) + endColor.g*progress);
-        const bC = Math.round(startColor.b*(1-progress) + endColor.b*progress);
-        circle.style.stroke = `rgb(${rC},${gC},${bC})`;
-
-        if(progress < 1) requestAnimationFrame(animate);
-        else {
-            wrapper.style.transition = "opacity 0.6s";
-            wrapper.style.opacity = 0;
-            setTimeout(() => { wrapper.style.display = "none"; wrapper.style.opacity = 1; }, 600);
-        }
-    }
-    requestAnimationFrame(animate);
-
-    // 發送 API
-    let apiData = null;
-    try {
-        const res = await fetch(API_ENDPOINT, {
-            method: "POST",
-            body: JSON.stringify({ userId: window.userId, displayName: window.userName, status })
-        });
-        apiData = await res.json();
-    } catch(err) {
-        console.error(err);
-        apiData = { message:"失敗" };
-    }
-
-    if(apiData.message.includes("成功")) {
-        Swal.fire({ icon: "success", title: "🎉 打卡成功！", html: `<strong>打卡時間：</strong> ${apiData.date} ${apiData.time}`, showConfirmButton:false, timer:2000, backdrop:"rgba(0,0,0,0.5)" });
-    } else {
-        Swal.fire({ icon: "error", title: "😥 今日已打卡", html:"重複打卡", showConfirmButton:false, timer:2000, backdrop:"rgba(0,0,0,0.5)" });
-    }
-
-    updateTodayRecords();
+async function updateTodayRecords(){
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,"/");
+  const res = await fetch(`${API_ENDPOINT}?action=getDate&userId=${window.userId}&date=${today}`);
+  const data = await res.json();
+  const container = document.getElementById("todayRecords");
+  if(!data.length){ container.innerHTML="今日打卡紀錄：無"; return; }
+  container.innerHTML="今日打卡紀錄：<br>"+data.map(r=>`${r.status} ${r.time} ${COMPANY_IPS.includes(r.ip)?"公司網路":"異地"} ${r.isMakeup?"(補打卡)":""}`).join("<br>");
 }
 
-// ===== 取得今日紀錄 =====
-async function updateTodayRecords() {
-    const now = new Date();
-    const today = now.toLocaleDateString("zh-TW").replace(/\//g, "/");
-    try {
-        const res = await fetch(`${API_ENDPOINT}?action=getToday&userId=${window.userId}&date=${today}`);
-        const data = await res.json();
-        const container = document.getElementById("todayRecords");
-        if(!data.length){ container.innerHTML = "今日打卡紀錄：無"; return; }
-        container.innerHTML = "今日打卡紀錄：<br>" + data.map(r => `${r.status} ${fixTimeFormat(r.time)}`).join("<br>");
-    } catch(err){
-        console.error(err);
-        document.getElementById("todayRecords").innerHTML = "今日打卡紀錄：讀取失敗";
-    }
+async function searchDateRecords(){
+  const date = document.getElementById("queryDate").value;
+  if(!date){ updateTodayRecords(); return; }
+  const dateStr = date.replace(/-/g,"/");
+  const res = await fetch(`${API_ENDPOINT}?action=getDate&userId=${window.userId}&date=${dateStr}`);
+  const data = await res.json();
+  const container = document.getElementById("todayRecords");
+  if(!data.length){ container.innerHTML=`${dateStr}：無紀錄`; return; }
+  container.innerHTML=`${dateStr} 打卡紀錄：<br>`+data.map(r=>`${r.status} ${r.time} ${COMPANY_IPS.includes(r.ip)?"公司網路":"異地"} ${r.isMakeup?"(補打卡)":""}`).join("<br>");
 }
 
-// ===== 查詢指定日期 =====
-async function searchDateRecords() {
-    const dateInput = document.getElementById("queryDate").value;
-    if(!dateInput){ updateTodayRecords(); return; }
-    const parts = dateInput.split("-");
-    const dateStr = `${parts[0]}/${parts[1]}/${parts[2]}`;
-    try {
-        const res = await fetch(`${API_ENDPOINT}?action=getDate&userId=${window.userId}&date=${dateStr}`);
-        const data = await res.json();
-        const container = document.getElementById("todayRecords");
-        if(!data.length){ container.innerHTML = `${dateStr}：無紀錄`; return; }
-        container.innerHTML = `${dateStr} 打卡紀錄：<br>` + data.map(r => `${r.status} ${fixTimeFormat(r.time)}`).join("<br>");
-    } catch(err){
-        console.error(err);
-        document.getElementById("todayRecords").innerHTML = `${dateStr} 查詢失敗`;
-    }
-}
-function clearSearch() { document.getElementById("queryDate").value=""; updateTodayRecords(); }
-
-// ===== 上下班按鈕 =====
-btnStart.onclick = () => performClockIn("上班");
-btnEnd.onclick = () => performClockIn("下班");
-
-// ===== 管理者登入 =====
-async function adminLogin(){
-    const { value: creds } = await Swal.fire({
-        title: '管理者登入',
-        html:
-            `<input type="text" id="adminAccount" class="swal2-input" placeholder="帳號">
-             <input type="password" id="adminPassword" class="swal2-input" placeholder="密碼">`,
-        confirmButtonText: '登入',
-        showCancelButton: true,
-        preConfirm: () => {
-            const account = document.getElementById('adminAccount').value;
-            const password = document.getElementById('adminPassword').value;
-            if(!account || !password){ Swal.showValidationMessage("帳號與密碼不可空白"); return false; }
-            return { account, password };
-        }
-    });
-
-    if(!creds) return;
-
-    try{
-        const res = await fetch(API_ENDPOINT+"?action=loginManager", {
-            method:"POST",
-            body: JSON.stringify(creds)
-        });
-        const data = await res.json();
-        if(data.success){
-            Swal.fire("登入成功","可查詢下載考勤資料","success");
-            // 可導向管理者頁面或開啟查詢介面
-        } else Swal.fire("登入失敗","帳號或密碼錯誤","error");
-    } catch(e){ console.error(e); Swal.fire("登入失敗","請稍後再試","error"); }
+// ===== 管理員查詢 =====
+async function queryRecords(){
+  const date = document.getElementById("adminQueryDate").value;
+  const res = await fetch(API_ENDPOINT+"?action=getAll&date="+date);
+  const data = await res.json();
+  const tbody = document.getElementById("recordsTable").querySelector("tbody");
+  tbody.innerHTML="";
+  data.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML=`<td>${r.userId}</td><td>${r.userName}</td><td>${r.date}</td><td>${r.time}</td><td>${r.status}</td><td>${r.ip}</td><td>${r.isMakeup?"是":""}</td>`;
+    tbody.appendChild(tr);
+  });
 }
 
-// ===== 初始化 =====
-window.onload = async () => { await updateUserInfo(); await updateTodayRecords(); };
+function downloadCSV(){
+  const rows = Array.from(document.getElementById("recordsTable").querySelectorAll("tr"));
+  let csvContent = rows.map(r=>Array.from(r.querySelectorAll("th,td")).map(c=>`"${c.innerText}"`).join(",")).join("\n");
+  const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="打卡紀錄.csv"; a.click(); URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
 </html>
-
