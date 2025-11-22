@@ -242,7 +242,7 @@ window.userReady=false;
 
 // 取得使用者資訊
 async function updateUserInfo(){
-    const liffInit = liff.init({ liffId:"2008504718-nmXP0WRV" });
+    const liffInit = liff.init({ liffId:"2008549731-Zkv32GPr" });
     const [_, ip] = await Promise.all([liffInit,getIP()]);
     if(!liff.isLoggedIn()) await liff.login();
     const [profile,finalIP] = await Promise.all([liff.getProfile(),getIP()]);
