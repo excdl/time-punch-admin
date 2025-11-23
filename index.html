@@ -68,14 +68,12 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
     </div>
 
     <div class="buttons-container">
-    <button class="register-btn" id="btnEmployeeRegister" style="background:#3498db;">員工註冊</button>
+    <button id="btnEmployeeRegister" style="background-color:#3498db; color:white; margin-right:5px;">員工註冊</button>
     <button id="btnApprove">管理員註冊</button>
 </div>
 
-</div>
-
 <script>
-const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOgyCkhGp1Prc-6wTd5pDGOdO1Rf4mtCQEOIbKLT_o8-lIB4Ge3N2BXKc3fGl_WAJpNA/exec";
+const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbx9g0V8SzWvYOvZz3gmqSpJdfr5wRZaqF-kNVfM8-d2sN5zh4ChMC1AN442b2GwLWcGUQ/exec";
 const SYSTEM_ADMIN_USER = "admin";
 const SYSTEM_ADMIN_PASS = "N7X4K9Q2L8R5B1Z6";
 
@@ -365,80 +363,57 @@ document.getElementById("btnApprove").onclick = async () => {
 };
 
 // ======== 員工註冊 ========
-async function getIP() {
-    // 嘗試從 sessionStorage 快取
-    const cache = sessionStorage.getItem("myIP");
-    if (cache) return cache;
-    try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        sessionStorage.setItem("myIP", data.ip);
-        return data.ip;
-    } catch {
-        return "";
-    }
-}
-
 document.getElementById("btnEmployeeRegister").onclick = async () => {
-    // Step 1: 取得 userId 與 IP
-    let userId = "", userName = "", ip = "";
-    try {
-        await liff.init({ liffId: "YOUR_LIFF_ID" });
-        if (!liff.isLoggedIn()) await liff.login();
-        const profile = await liff.getProfile();
-        userId = profile.userId;
-        userName = profile.displayName;
-        ip = await getIP();
-    } catch(err) {
-        Swal.fire({icon:"error", title:"無法取得使用者資訊", text: err.message});
+    if(!window.userReady) {
+        Swal.fire({icon:"info", title:"請稍候", text:"使用者資料尚未載入"});
         return;
     }
 
-    // Step 2: 彈跳窗輸入公司名稱與員工姓名
     const { value: formData, isConfirmed } = await Swal.fire({
-        title: '員工註冊',
+        title: "員工註冊",
         html: `
-            <input id="swalCompany" class="swal2-input" placeholder="公司名稱">
-            <input id="swalName" class="swal2-input" placeholder="員工姓名">
-            <p style="font-size:12px;color:#888;">請在公司網路下註冊</p>
+            <input id="empCompany" class="swal2-input" placeholder="公司名稱">
+            <input id="empName" class="swal2-input" placeholder="員工姓名 (請勿使用暱稱)">
         `,
-        confirmButtonText: '註冊',
-        showCancelButton: true,
+        confirmButtonText:"註冊",
+        showCancelButton:true,
         preConfirm: () => {
-            const company = document.getElementById('swalCompany').value.trim();
-            const name = document.getElementById('swalName').value.trim();
-            if (!company || !name) Swal.showValidationMessage("公司名稱與員工姓名皆必填");
+            const company = document.getElementById("empCompany").value.trim();
+            const name = document.getElementById("empName").value.trim();
+            if(!company || !name) Swal.showValidationMessage("所有欄位皆為必填");
             return { company, name };
         }
     });
 
-    if (!isConfirmed) return;
+    if(!isConfirmed) return;
 
-    // Step 3: 發送到後端
-    const payload = {
-        action: "registerEmployee",
-        userId,
-        empName: formData.name,
-        companyName: formData.company,
-        ip
-    };
+    const ip = await getIP();
 
     try {
-        const res = await fetch("YOUR_GAS_WEBAPP_URL", {
-            method: "POST",
-            body: JSON.stringify(payload)
+        const res = await fetch(API_ENDPOINT, {
+            method:"POST",
+            body: JSON.stringify({
+                action:"registerEmployee",
+                userId: window.userId,
+                companyName: formData.company,
+                empName: formData.name,
+                ip
+            })
         });
         const data = await res.json();
+
         Swal.fire({
-            icon: data.status === "success" ? "success" : "error",
+            icon: data.status==="success"?"success":"error",
             title: data.message,
-            timer: 2000,
-            showConfirmButton: false
+            timer:2000,
+            showConfirmButton:false
         });
+
     } catch(err) {
         Swal.fire({icon:"error", title:"註冊失敗", text: err.message});
     }
 };
+
 
 // ======== 初始化 ========
 window.onload = async () => { await updateUserInfo(); await updateTodayRecords(); };
