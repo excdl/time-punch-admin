@@ -68,7 +68,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
     <div class="buttons-container">
         <button id="btnStart">上班</button>
         <button id="btnEnd">下班</button>
-        <button id="btnMakeup">補打卡</button>
+       
     </div>
 
     <div id="countdownWrapper">
@@ -255,15 +255,6 @@ async function performClockIn(status, customDate = "", customTime = "", isMakeup
 
 btnStart.onclick = () => performClockIn("上班");
 btnEnd.onclick = () => performClockIn("下班");
-btnMakeup.onclick = async () => {
-    const { value, isConfirmed } = await Swal.fire({
-        title:"補打卡設定",
-        html:`<input type="date" id="d"><input type="time" id="t"><select id="s"><option value="">請選</option><option value="上班">上班</option><option value="下班">下班</option></select>`,
-        showCancelButton:true, confirmButtonText:"完成", cancelButtonText:"取消",
-        preConfirm:()=> { const d=document.getElementById("d").value; const t=document.getElementById("t").value; const s=document.getElementById("s").value; if(!d||!t||!s){ Swal.showValidationMessage("日期、時間、狀態皆為必填"); return false; } return [d.replace(/-/g,'/'),t,s]; }
-    });
-    if(isConfirmed) performClockIn(value[2], value[0], value[1], true);
-};
 
 // ======== 查詢功能 ========
 async function updateTodayRecords() {
