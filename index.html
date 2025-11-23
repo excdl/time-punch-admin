@@ -299,7 +299,8 @@ document.getElementById("btnApprove").onclick = async () => {
           <input id="sysUser" class="swal2-input" placeholder="帳號">
           <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
         `,
-        confirmButtonText:"登入", 
+        confirmButtonText:"登入",
+        cancelButtonText:"取消", 
         showCancelButton:true,
         preConfirm:()=>{
             const u=document.getElementById("sysUser").value.trim();
