@@ -93,7 +93,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
 </div>
 
 <script>
-const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbx9g0V8SzWvYOvZz3gmqSpJdfr5wRZaqF-kNVfM8-d2sN5zh4ChMC1AN442b2GwLWcGUQ/exec";
+const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXh4gUBbOu0r230ROzHJtgpkapmml0C9UtsLVUCXTPpKZ7vRgnnO6hVIeiykOWkQUPxA/exec";
 const SYSTEM_ADMIN_USER = "admin";
 const SYSTEM_ADMIN_PASS = "N7X4K9Q2L8R5B1Z6";
 
@@ -299,21 +299,19 @@ document.getElementById("btnApprove").onclick = async () => {
           <input id="sysUser" class="swal2-input" placeholder="帳號">
           <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
         `,
-        confirmButtonText:"登入",
-        cancelButtonText:"取消",
+        confirmButtonText:"登入", 
         showCancelButton:true,
-        preConfirm:()=> {
-            const u = document.getElementById("sysUser").value.trim();
-            const p = document.getElementById("sysPass").value.trim();
-            if(!u || !p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
-            return {u, p};
+        preConfirm:()=>{
+            const u=document.getElementById("sysUser").value.trim();
+            const p=document.getElementById("sysPass").value.trim();
+            if(!u||!p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
+            return {u,p};
         }
     });
 
     if(!step1Confirmed) return;
-
-    if(loginData.u !== SYSTEM_ADMIN_USER || loginData.p !== SYSTEM_ADMIN_PASS){
-        Swal.fire({icon:"error", title:"驗證失敗", text:"帳號或密碼錯誤"});
+    if(loginData.u!==SYSTEM_ADMIN_USER || loginData.p!==SYSTEM_ADMIN_PASS){
+        Swal.fire({icon:"error",title:"驗證失敗"});
         return;
     }
 
@@ -327,17 +325,16 @@ document.getElementById("btnApprove").onclick = async () => {
           <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
           <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
         `,
-        confirmButtonText:"註冊",
-        cancelButtonText:"取消",
+        confirmButtonText:"註冊", 
         showCancelButton:true,
         preConfirm:()=> {
-            const companyName = document.getElementById("companyName").value.trim();
-            const contactPerson = document.getElementById("contactPerson").value.trim();
-            const companyPhone = document.getElementById("companyPhone").value.trim();
-            const newUser = document.getElementById("newUser").value.trim();
-            const newPass = document.getElementById("newPass").value.trim();
+            const companyName=document.getElementById("companyName").value.trim();
+            const contactPerson=document.getElementById("contactPerson").value.trim();
+            const companyPhone=document.getElementById("companyPhone").value.trim();
+            const newUser=document.getElementById("newUser").value.trim();
+            const newPass=document.getElementById("newPass").value.trim();
 
-            if(!companyName || !contactPerson || !companyPhone || !newUser || !newPass){
+            if(!companyName||!contactPerson||!companyPhone||!newUser||!newPass){
                 Swal.showValidationMessage("所有欄位皆為必填");
                 return false;
             }
@@ -348,39 +345,40 @@ document.getElementById("btnApprove").onclick = async () => {
     if(!step2Confirmed) return;
 
     try {
-        let ip;
-        try { ip = await getIP(); } catch { ip = "0.0.0.0"; }
-        if(!ip) ip = "0.0.0.0";
+        const ip = await getIP();
 
         const payload = {
             action: "registerAdmin",
-            userId: window.userId || "unknown",
-            displayName: window.userName || "unknown",
+            userId: window.userId,
+            displayName: window.userName,
             ip,
+
             companyName: adminData.companyName,
             contactPerson: adminData.contactPerson,
             newUser: adminData.newUser,
             newPass: adminData.newPass,
-            extraData: { phone: adminData.companyPhone }
+
+            extraData: {
+                phone: adminData.companyPhone
+            }
         };
 
         const res = await fetch(API_ENDPOINT, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
         const data = await res.json();
 
         Swal.fire({
-            icon: data.status === "success" ? "success" : "error",
-            title: data.message,
+            icon:data.status==="success"?"success":"error",
+            title:data.message,
             timer:2000,
             showConfirmButton:false
         });
 
     } catch(err){
-        Swal.fire({icon:"error", title:"註冊失敗", text: err.message});
+        Swal.fire({icon:"error",title:"註冊失敗",text:err.message});
     }
 };
 
@@ -398,44 +396,34 @@ document.getElementById("btnEmployeeRegister").onclick = async () => {
             <input id="empName" class="swal2-input" placeholder="員工姓名 (請勿使用暱稱)">
         `,
         confirmButtonText:"註冊",
-        cancelButtonText:"取消",
         showCancelButton:true,
         preConfirm: () => {
             const company = document.getElementById("empCompany").value.trim();
             const name = document.getElementById("empName").value.trim();
-            if(!company || !name){
-                Swal.showValidationMessage("所有欄位皆為必填");
-                return false;
-            }
+            if(!company || !name) Swal.showValidationMessage("所有欄位皆為必填");
             return { company, name };
         }
     });
 
     if(!isConfirmed) return;
 
-    let ip;
-    try { ip = await getIP(); } catch { ip = "0.0.0.0"; }
-    if(!ip) ip = "0.0.0.0";
+    const ip = await getIP();
 
     try {
-        const payload = {
-            action:"registerEmployee",
-            userId: window.userId || "unknown",
-            companyName: formData.company,
-            empName: formData.name,
-            ip
-        };
-
         const res = await fetch(API_ENDPOINT, {
             method:"POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                action:"registerEmployee",
+                userId: window.userId,
+                companyName: formData.company,
+                empName: formData.name,
+                ip
+            })
         });
-
         const data = await res.json();
 
         Swal.fire({
-            icon: data.status === "success" ? "success" : "error",
+            icon: data.status==="success"?"success":"error",
             title: data.message,
             timer:2000,
             showConfirmButton:false
@@ -445,7 +433,6 @@ document.getElementById("btnEmployeeRegister").onclick = async () => {
         Swal.fire({icon:"error", title:"註冊失敗", text: err.message});
     }
 };
-
 
 // ======== 初始化 ========
 window.onload = async () => { await updateUserInfo(); await updateTodayRecords(); };
