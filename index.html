@@ -29,14 +29,35 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
 #btnQuery { background:#d3d3d3; color:black; }  
 #btnReturn { background:#d3d3d3; color:black; }  
 #todayRecords { border:1px solid #ccc; border-radius:8px; padding:10px; min-height:50px; font-size:16px; background: #fafafa; width:100%; box-sizing:border-box; }
-#btnApprove { margin-top:10px; padding:12px 20px; font-size:18px; font-weight:bold; border-radius:10px; background:linear-gradient(145deg,#8e44ad,#663399); color:white; display:block; width:100%; cursor:pointer; border:none; }
-#btnApprove:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+/* ===== 統一員工註冊與管理員註冊按鈕 ===== */
+.register-btn {
+    flex:1 1 0;
+    padding:12px 0;       /* 固定垂直高度 */
+    font-size:18px;       /* 統一字體大小 */
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+    color:white;
+    white-space:nowrap;
+    transition: all 0.2s ease;
+    text-align:center;
+}
+
+#btnEmployeeRegister { background: linear-gradient(145deg,#3498db,#2980b9); }
+#btnApprove           { background: linear-gradient(145deg,#8e44ad,#663399); }
+
+.register-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.register-btn:active{ transform: translateY(1px);  box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+
 @media(max-width:400px){
     .buttons-container button{ font-size:20px; }
     #querySection input[type="date"]{ font-size:13px; }
     #querySection button{ font-size:13px; }
 }
 </style>
+
 </head>
 <body>
 
