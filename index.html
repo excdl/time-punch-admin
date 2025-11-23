@@ -68,7 +68,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
     </div>
 
     <div class="buttons-container">
-    <button id="btnEmployee" style="background:#3498db;color:white;">員工註冊</button>
+    <button class="register-btn" id="btnEmployeeRegister" style="background:#3498db;">員工註冊</button>
     <button id="btnApprove">管理員註冊</button>
 </div>
 
@@ -365,81 +365,82 @@ document.getElementById("btnApprove").onclick = async () => {
 };
 
 // ======== 員工註冊 ========
-document.getElementById("btnEmployee").onclick = async () => {
-
-    const ip = await getIP();
-
-    // 先抓管理者 IP 清單（後端已有 getUserConfig）
-    let companyIPs = [];
+async function getIP() {
+    // 嘗試從 sessionStorage 快取
+    const cache = sessionStorage.getItem("myIP");
+    if (cache) return cache;
     try {
-        const res = await fetch(`${API_ENDPOINT}?action=getAllAdminIPs`);
+        const res = await fetch("https://api.ipify.org?format=json");
         const data = await res.json();
-        companyIPs = data.ips || [];
+        sessionStorage.setItem("myIP", data.ip);
+        return data.ip;
     } catch {
-        Swal.fire({ icon:"error", title:"IP 讀取失敗" });
+        return "";
+    }
+}
+
+document.getElementById("btnEmployeeRegister").onclick = async () => {
+    // Step 1: 取得 userId 與 IP
+    let userId = "", userName = "", ip = "";
+    try {
+        await liff.init({ liffId: "YOUR_LIFF_ID" });
+        if (!liff.isLoggedIn()) await liff.login();
+        const profile = await liff.getProfile();
+        userId = profile.userId;
+        userName = profile.displayName;
+        ip = await getIP();
+    } catch(err) {
+        Swal.fire({icon:"error", title:"無法取得使用者資訊", text: err.message});
         return;
     }
 
-    // 若 IP 不在管理者 IP 清單 → 阻擋
-    if(!companyIPs.includes(ip)){
-        Swal.fire({
-            icon:"error",
-            title:"未使用公司網路",
-            text:"無法完成員工註冊"
-        });
-        return;
-    }
-
-    // 彈窗填資料
-    const { value: emp, isConfirmed } = await Swal.fire({
-        title: "員工註冊",
+    // Step 2: 彈跳窗輸入公司名稱與員工姓名
+    const { value: formData, isConfirmed } = await Swal.fire({
+        title: '員工註冊',
         html: `
-            <input id="empCompany" class="swal2-input" placeholder="公司名稱">
-            <input id="empName" class="swal2-input" placeholder="員工姓名 (完整姓名)">
+            <input id="swalCompany" class="swal2-input" placeholder="公司名稱">
+            <input id="swalName" class="swal2-input" placeholder="員工姓名">
+            <p style="font-size:12px;color:#888;">請在公司網路下註冊</p>
         `,
-        confirmButtonText:"送出",
-        showCancelButton:true,
-        preConfirm:()=>{
-            const company=document.getElementById("empCompany").value.trim();
-            const name=document.getElementById("empName").value.trim();
-            if(!company || !name){
-                Swal.showValidationMessage("所有欄位皆為必填");
-                return false;
-            }
+        confirmButtonText: '註冊',
+        showCancelButton: true,
+        preConfirm: () => {
+            const company = document.getElementById('swalCompany').value.trim();
+            const name = document.getElementById('swalName').value.trim();
+            if (!company || !name) Swal.showValidationMessage("公司名稱與員工姓名皆必填");
             return { company, name };
         }
     });
 
-    if(!isConfirmed) return;
+    if (!isConfirmed) return;
 
-    // 送到後端
-    try{
-        const payload = {
-            action:"registerEmployee",
-            userId: window.userId,
-            ip,
-            company: emp.company,
-            empName: emp.name
-        };
+    // Step 3: 發送到後端
+    const payload = {
+        action: "registerEmployee",
+        userId,
+        empName: formData.name,
+        companyName: formData.company,
+        ip
+    };
 
-        const res = await fetch(API_ENDPOINT, {
-            method:"POST",
+    try {
+        const res = await fetch("YOUR_GAS_WEBAPP_URL", {
+            method: "POST",
             body: JSON.stringify(payload)
         });
-
         const data = await res.json();
-
         Swal.fire({
-            icon: data.status==="success" ? "success" : "error",
+            icon: data.status === "success" ? "success" : "error",
             title: data.message,
-            timer:2000,
-            showConfirmButton:false
+            timer: 2000,
+            showConfirmButton: false
         });
-
-    }catch(err){
-        Swal.fire({icon:"error",title:"註冊失敗", text: err.message});
+    } catch(err) {
+        Swal.fire({icon:"error", title:"註冊失敗", text: err.message});
     }
 };
+</script>
+
 
 // ======== 初始化 ========
 window.onload = async () => { await updateUserInfo(); await updateTodayRecords(); };
