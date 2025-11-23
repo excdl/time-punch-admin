@@ -119,30 +119,78 @@ function updateDateTime() {
 setInterval(updateDateTime, 1000);
 updateDateTime();
 
+// ======== 檢查公司 IP ========
+function checkCompanyIP(ip, companyIPs){
+    if(!ip || !Array.isArray(companyIPs)) return false;
+    // 去除空格並統一成字串再比對
+    const cleanIPs = companyIPs.map(x => String(x).trim());
+    return cleanIPs.includes(String(ip).trim());
+}
+
 // ======== 使用者資訊 ========
 window.userReady = false;
 async function updateUserInfo() {
-    await liff.init({ liffId: "2008549731-Zkv32GPr" });
-    if (!liff.isLoggedIn()) await liff.login();
-    const [profile, ip] = await Promise.all([liff.getProfile(), getIP()]);
-    window.userId = profile.userId;
-    window.userName = profile.displayName;
-    window.userIP = ip;
-    document.getElementById("userInfo").textContent = `${window.userName} 您好`;
-
-    // 取得公司網路 IP
     try {
-        const ipRes = await fetch(`${API_ENDPOINT}?action=getUserConfig&userId=${window.userId}`);
-        const ipData = await ipRes.json();
-        window.COMPANY_IPS = ipData.companyIPs || [];
-    } catch { window.COMPANY_IPS = []; }
+        await liff.init({ liffId: "2008549731-Zkv32GPr" });
+        if (!liff.isLoggedIn()) await liff.login();
 
-    const s = document.getElementById("statusInfo");
-    const isCompany = window.COMPANY_IPS.includes(ip);
-    s.textContent = isCompany ? "公司網路" : "非公司網路";
-    s.style.color = isCompany ? "#008000" : "#FF0000";
-    s.style.backgroundColor = isCompany ? "rgba(144,238,144,0.6)" : "rgba(255,182,193,0.3)";
-    s.style.padding = "5px 15px"; s.style.borderRadius="20px"; s.style.display="inline-block"; s.style.fontWeight="bold";
+        const [profile, ip] = await Promise.all([liff.getProfile(), getIP()]);
+        window.userId = profile.userId;
+        window.userName = profile.displayName;
+        window.userIP = ip;
+
+        document.getElementById("userInfo").textContent = `${window.userName} 您好`;
+
+        // 取得公司網路 IP
+        try {
+            const ipRes = await fetch(`${API_ENDPOINT}?action=getUserConfig&userId=${window.userId}`);
+            const ipData = await ipRes.json();
+            window.COMPANY_IPS = Array.isArray(ipData.companyIPs) ? ipData.companyIPs : [];
+        } catch {
+            window.COMPANY_IPS = [];
+        }
+
+        const s = document.getElementById("statusInfo");
+        const isCompany = checkCompanyIP(ip, window.COMPANY_IPS);
+        s.textContent = isCompany ? "公司網路" : "非公司網路";
+        s.style.color = isCompany ? "#008000" : "#FF0000";
+        s.style.backgroundColor = isCompany ? "rgba(144,238,144,0.6)" : "rgba(255,182,193,0.3)";
+        s.style.padding = "5px 15px"; 
+        s.style.borderRadius="20px"; 
+        s.style.display="inline-block"; 
+        s.style.fontWeight="bold";
+
+        // 打卡按鈕是否可點
+        const btns = [btnStart, btnEnd, btnMakeup];
+        btns.forEach(b=>{
+            b.disabled = !isCompany;
+            if(!isCompany){ 
+                b.style.background = "#ccc"; 
+                b.style.cursor = "not-allowed"; 
+            }
+        });
+
+        window.userReady = true;
+    } catch(err){
+        console.error("更新使用者資訊失敗:", err);
+        Swal.fire({icon:"error", title:"無法取得使用者資訊", text: err.message});
+    }
+}
+
+// ======== 取得 IP ========
+async function getIP() {
+    const cache = sessionStorage.getItem("myIP");
+    if (cache) return cache;
+    try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        sessionStorage.setItem("myIP", data.ip);
+        return data.ip;
+    } catch {
+        return "";
+    }
+}
+
 
     // 打卡按鈕是否可點
     const btns = [btnStart, btnEnd, btnMakeup];
