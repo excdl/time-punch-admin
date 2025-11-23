@@ -29,28 +29,8 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
 #btnQuery { background:#d3d3d3; color:black; }  
 #btnReturn { background:#d3d3d3; color:black; }  
 #todayRecords { border:1px solid #ccc; border-radius:8px; padding:10px; min-height:50px; font-size:16px; background: #fafafa; width:100%; box-sizing:border-box; }
-
-/* ===== 統一員工註冊與管理員註冊按鈕 ===== */
-.register-btn {
-    flex:1 1 0;
-    padding:12px 0;       /* 固定垂直高度 */
-    font-size:18px;       /* 統一字體大小 */
-    border-radius:10px;
-    border:none;
-    cursor:pointer;
-    font-weight:bold;
-    color:white;
-    white-space:nowrap;
-    transition: all 0.2s ease;
-    text-align:center;
-}
-
-#btnEmployeeRegister { background: linear-gradient(145deg,#3498db,#2980b9); }
-#btnApprove           { background: linear-gradient(145deg,#8e44ad,#663399); }
-
-.register-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.register-btn:active{ transform: translateY(1px);  box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
-
+#btnApprove { margin-top:10px; padding:12px 20px; font-size:18px; font-weight:bold; border-radius:10px; background:linear-gradient(145deg,#8e44ad,#663399); color:white; display:block; width:100%; cursor:pointer; border:none; }
+#btnApprove:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 @media(max-width:400px){
     .buttons-container button{ font-size:20px; }
     #querySection input[type="date"]{ font-size:13px; }
@@ -87,9 +67,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
         <div id="todayRecords">今日打卡紀錄：</div>
     </div>
 
-    <div class="buttons-container">
-    <button class="register-btn" id="btnEmployeeRegister">員工註冊</button>
-    <button class="register-btn" id="btnApprove">管理員註冊</button>
+    <button id="btnApprove">管理員註冊</button>
 </div>
 
 <script>
@@ -382,57 +360,6 @@ document.getElementById("btnApprove").onclick = async () => {
     }
 };
 
-// ======== 員工註冊 ========
-document.getElementById("btnEmployeeRegister").onclick = async () => {
-    if(!window.userReady) {
-        Swal.fire({icon:"info", title:"請稍候", text:"使用者資料尚未載入"});
-        return;
-    }
-
-    const { value: formData, isConfirmed } = await Swal.fire({
-        title: "員工註冊",
-        html: `
-            <input id="empCompany" class="swal2-input" placeholder="公司名稱">
-            <input id="empName" class="swal2-input" placeholder="員工姓名 (請勿使用暱稱)">
-        `,
-        confirmButtonText:"註冊",
-        showCancelButton:true,
-        preConfirm: () => {
-            const company = document.getElementById("empCompany").value.trim();
-            const name = document.getElementById("empName").value.trim();
-            if(!company || !name) Swal.showValidationMessage("所有欄位皆為必填");
-            return { company, name };
-        }
-    });
-
-    if(!isConfirmed) return;
-
-    const ip = await getIP();
-
-    try {
-        const res = await fetch(API_ENDPOINT, {
-            method:"POST",
-            body: JSON.stringify({
-                action:"registerEmployee",
-                userId: window.userId,
-                companyName: formData.company,
-                empName: formData.name,
-                ip
-            })
-        });
-        const data = await res.json();
-
-        Swal.fire({
-            icon: data.status==="success"?"success":"error",
-            title: data.message,
-            timer:2000,
-            showConfirmButton:false
-        });
-
-    } catch(err) {
-        Swal.fire({icon:"error", title:"註冊失敗", text: err.message});
-    }
-};
 
 // ======== 初始化 ========
 window.onload = async () => { await updateUserInfo(); await updateTodayRecords(); };
@@ -440,6 +367,8 @@ window.onload = async () => { await updateUserInfo(); await updateTodayRecords()
 
 </body>
 </html>
+
+
 
 
 
