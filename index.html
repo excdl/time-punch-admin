@@ -267,9 +267,152 @@ async function searchDateRecords() {
     } catch(err){ document.getElementById("todayRecords").innerHTML=`${dateStr} 查詢失敗`; }
 }
 
-// ======== 管理員註冊、員工註冊程式碼保持不變 ========
-document.getElementById("btnApprove").onclick = async () => { /* 原管理員註冊程式碼 */ };
-document.getElementById("btnEmployeeRegister").onclick = async () => { /* 原員工註冊程式碼 */ };
+// ======== 管理員註冊 ========
+document.getElementById("btnApprove").onclick = async () => {
+    const { value: loginData, isConfirmed: step1Confirmed } = await Swal.fire({
+        title: "管理員驗證",
+        html: `
+          <input id="sysUser" class="swal2-input" placeholder="帳號">
+          <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
+        `,
+        confirmButtonText:"登入",
+        cancelButtonText:"取消", 
+        showCancelButton:true,
+        preConfirm:()=>{
+            const u=document.getElementById("sysUser").value.trim();
+            const p=document.getElementById("sysPass").value.trim();
+            if(!u||!p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
+            return {u,p};
+        }
+    });
+
+    if(!step1Confirmed) return;
+    if(loginData.u!==SYSTEM_ADMIN_USER || loginData.p!==SYSTEM_ADMIN_PASS){
+        Swal.fire({icon:"error",title:"驗證失敗"});
+        return;
+    }
+
+    // Step 2
+    const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
+        title:"新增管理員資料",
+        html:`
+          <input id="companyName" class="swal2-input" placeholder="公司名稱">
+          <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
+          <input id="companyPhone" class="swal2-input" placeholder="公司電話">
+          <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
+          <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
+        `,
+        confirmButtonText:"註冊",
+        cancelButtonText:"取消",
+        showCancelButton:true,
+        preConfirm:()=> {
+            const companyName=document.getElementById("companyName").value.trim();
+            const contactPerson=document.getElementById("contactPerson").value.trim();
+            const companyPhone=document.getElementById("companyPhone").value.trim();
+            const newUser=document.getElementById("newUser").value.trim();
+            const newPass=document.getElementById("newPass").value.trim();
+
+            if(!companyName||!contactPerson||!companyPhone||!newUser||!newPass){
+                Swal.showValidationMessage("所有欄位皆為必填");
+                return false;
+            }
+            return {companyName, contactPerson, companyPhone, newUser, newPass};
+        }
+    });
+
+    if(!step2Confirmed) return;
+
+    try {
+        const ip = await getIP();
+
+        const payload = {
+            action: "registerAdmin",
+            userId: window.userId,
+            displayName: window.userName,
+            ip,
+
+            companyName: adminData.companyName,
+            contactPerson: adminData.contactPerson,
+            newUser: adminData.newUser,
+            newPass: adminData.newPass,
+
+            extraData: {
+                phone: adminData.companyPhone
+            }
+        };
+
+        const res = await fetch(API_ENDPOINT, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        Swal.fire({
+            icon:data.status==="success"?"success":"error",
+            title:data.message,
+            timer:2000,
+            showConfirmButton:false
+        });
+
+    } catch(err){
+        Swal.fire({icon:"error",title:"註冊失敗",text:err.message});
+    }
+};
+
+// ======== 員工註冊 ========
+document.getElementById("btnEmployeeRegister").onclick = async () => {
+    if(!window.userReady) {
+        Swal.fire({icon:"info", title:"請稍候", text:"使用者資料尚未載入"});
+        return;
+    }
+
+    const { value: formData, isConfirmed } = await Swal.fire({
+        title: "員工註冊",
+        html: `
+            <input id="empCompany" class="swal2-input" placeholder="公司名稱">
+            <input id="empName" class="swal2-input" placeholder="員工姓名 (請勿使用暱稱)">
+        `,
+        confirmButtonText:"註冊",
+        cancelButtonText:"取消",
+        showCancelButton:true,
+        preConfirm: () => {
+            const company = document.getElementById("empCompany").value.trim();
+            const name = document.getElementById("empName").value.trim();
+            if(!company || !name) Swal.showValidationMessage("所有欄位皆為必填");
+            return { company, name };
+        }
+    });
+
+    if(!isConfirmed) return;
+
+    const ip = await getIP();
+
+    try {
+        const res = await fetch(API_ENDPOINT, {
+            method:"POST",
+            body: JSON.stringify({
+                action:"registerEmployee",
+                userId: window.userId,
+                companyName: formData.company,
+                empName: formData.name,
+                ip
+            })
+        });
+        const data = await res.json();
+
+        Swal.fire({
+            icon: data.status==="success"?"success":"error",
+            title: data.message,
+            timer:2000,
+            showConfirmButton:false
+        });
+
+    } catch(err) {
+        Swal.fire({icon:"error", title:"註冊失敗", text: err.message});
+    }
+};
+
 
 // ======== 初始化 ========
 window.onload = async () => { await updateUserInfo(); await updateTodayRecords(); };
