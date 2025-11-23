@@ -325,7 +325,8 @@ document.getElementById("btnApprove").onclick = async () => {
           <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
           <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
         `,
-        confirmButtonText:"註冊", 
+        confirmButtonText:"註冊",
+        cancelButtonText:"取消",
         showCancelButton:true,
         preConfirm:()=> {
             const companyName=document.getElementById("companyName").value.trim();
@@ -396,6 +397,7 @@ document.getElementById("btnEmployeeRegister").onclick = async () => {
             <input id="empName" class="swal2-input" placeholder="員工姓名 (請勿使用暱稱)">
         `,
         confirmButtonText:"註冊",
+        cancelButtonText:"取消",
         showCancelButton:true,
         preConfirm: () => {
             const company = document.getElementById("empCompany").value.trim();
