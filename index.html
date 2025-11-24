@@ -267,7 +267,6 @@ async function searchDateRecords() {
     } catch(err){ document.getElementById("todayRecords").innerHTML=`${dateStr} 查詢失敗`; }
 }
 
-// ======== 管理員註冊 ========
 // ======== 管理員註冊 ======== 
 document.getElementById("btnApprove").onclick = async () => {
 
@@ -361,47 +360,50 @@ document.getElementById("btnApprove").onclick = async () => {
         showCancelButton:true,
         preConfirm: () => {
             return new Promise(async (resolve) => {
-                const companyName   = document.getElementById("companyName").value.trim();
-                const contactPerson = document.getElementById("contactPerson").value.trim();
-                const companyPhone  = document.getElementById("companyPhone").value.trim();
-                const newUser       = document.getElementById("newUser").value.trim();
-                const newPass       = document.getElementById("newPass").value.trim();
-                const confirmPass   = document.getElementById("confirmPass").value.trim();
-
-                if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
-                    Swal.showValidationMessage("所有欄位皆為必填");
-                    return;
-                }
-
-                if (newPass !== confirmPass) {
-                    Swal.showValidationMessage("密碼與確認密碼不一致");
-                    return;
-                }
-
-                if (!isPasswordStrong(newPass)) {
-                    Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
-                    return;
-                }
-
                 try {
+                    const companyName   = document.getElementById("companyName").value.trim();
+                    const contactPerson = document.getElementById("contactPerson").value.trim();
+                    const companyPhone  = document.getElementById("companyPhone").value.trim();
+                    const newUser       = document.getElementById("newUser").value.trim();
+                    const newPass       = document.getElementById("newPass").value.trim();
+                    const confirmPass   = document.getElementById("confirmPass").value.trim();
+
+                    if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
+                        Swal.showValidationMessage("所有欄位皆為必填");
+                        resolve(false);
+                        return;
+                    }
+
+                    if (newPass !== confirmPass) {
+                        Swal.showValidationMessage("密碼與確認密碼不一致");
+                        resolve(false);
+                        return;
+                    }
+
+                    if (!isPasswordStrong(newPass)) {
+                        Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
+                        resolve(false);
+                        return;
+                    }
+
+                    // 前端檢查帳號是否已存在
                     const checkRes = await fetch(API_ENDPOINT, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "checkUserExist",
-                            username: newUser
-                        })
+                        body: JSON.stringify({ action: "checkUserExist", username: newUser })
                     });
                     const checkData = await checkRes.json();
-
-                    if (checkData.exists === true) {
+                    if (checkData.exists) {
                         Swal.showValidationMessage("此帳號已存在，請更換其他帳號");
+                        resolve(false);
                         return;
                     }
 
                     resolve({ companyName, contactPerson, companyPhone, newUser, newPass });
+
                 } catch (err) {
                     Swal.showValidationMessage("檢查帳號失敗：" + err.message);
+                    resolve(false);
                 }
             });
         }
@@ -439,7 +441,6 @@ document.getElementById("btnApprove").onclick = async () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
-
         const data = await res.json();
 
         Swal.fire({
