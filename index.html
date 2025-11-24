@@ -268,12 +268,12 @@ async function searchDateRecords() {
 }
 
 // ======== 管理員註冊 ========
-// ======== 管理員註冊 ========
+// ======== 管理員註冊 ======== 
 document.getElementById("btnApprove").onclick = async () => {
 
     // -------------------------
     // Step 1：系統管理員登入驗證
-    -------------------------
+    // -------------------------
     const { value: loginData, isConfirmed: step1Confirmed } = await Swal.fire({
         title: "管理員驗證",
         html: `
@@ -311,10 +311,9 @@ document.getElementById("btnApprove").onclick = async () => {
         return;
     }
 
-
     // -------------------------
     // Step 2：新增管理員資料
-    -------------------------
+    // -------------------------
     const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
         title: "新增管理員資料",
         html: `
@@ -341,8 +340,7 @@ document.getElementById("btnApprove").onclick = async () => {
           </p>
         `,
         didOpen: () => {
-
-            // --- 密碼顯示切換 ---
+            // 密碼顯示切換
             document.getElementById("toggleNewPass").onclick = () => {
                 const i = document.getElementById("newPass");
                 i.type = i.type === "password" ? "text" : "password";
@@ -352,70 +350,68 @@ document.getElementById("btnApprove").onclick = async () => {
                 i.type = i.type === "password" ? "text" : "password";
             };
 
-            // --- 密碼強度指示 ---
+            // 密碼強度指示
             document.getElementById("newPass").addEventListener("input", () => {
                 const pw = document.getElementById("newPass").value;
-                const strengthText = checkPasswordStrength(pw);
-                document.getElementById("pwStrength").innerHTML = "密碼強度：" + strengthText;
+                document.getElementById("pwStrength").innerHTML = "密碼強度：" + checkPasswordStrength(pw);
             });
         },
-
         confirmButtonText:"註冊",
         cancelButtonText:"取消",
         showCancelButton:true,
-        preConfirm: async () => {
+        preConfirm: () => {
+            return new Promise(async (resolve) => {
+                const companyName   = document.getElementById("companyName").value.trim();
+                const contactPerson = document.getElementById("contactPerson").value.trim();
+                const companyPhone  = document.getElementById("companyPhone").value.trim();
+                const newUser       = document.getElementById("newUser").value.trim();
+                const newPass       = document.getElementById("newPass").value.trim();
+                const confirmPass   = document.getElementById("confirmPass").value.trim();
 
-            const companyName   = document.getElementById("companyName").value.trim();
-            const contactPerson = document.getElementById("contactPerson").value.trim();
-            const companyPhone  = document.getElementById("companyPhone").value.trim();
-            const newUser       = document.getElementById("newUser").value.trim();
-            const newPass       = document.getElementById("newPass").value.trim();
-            const confirmPass   = document.getElementById("confirmPass").value.trim();
+                if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
+                    Swal.showValidationMessage("所有欄位皆為必填");
+                    return;
+                }
 
-            // 必填檢查
-            if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
-                Swal.showValidationMessage("所有欄位皆為必填");
-                return false;
-            }
+                if (newPass !== confirmPass) {
+                    Swal.showValidationMessage("密碼與確認密碼不一致");
+                    return;
+                }
 
-            // 密碼兩次需一致
-            if (newPass !== confirmPass) {
-                Swal.showValidationMessage("密碼與確認密碼不一致");
-                return false;
-            }
+                if (!isPasswordStrong(newPass)) {
+                    Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
+                    return;
+                }
 
-            // 密碼強度檢查
-            if (!isPasswordStrong(newPass)) {
-                Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
-                return false;
-            }
+                try {
+                    const checkRes = await fetch(API_ENDPOINT, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "checkUserExist",
+                            username: newUser
+                        })
+                    });
+                    const checkData = await checkRes.json();
 
-            // 前端 AJAX → 檢查帳號是否存在
-            const checkRes = await fetch(API_ENDPOINT, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "checkUserExist",
-                    username: newUser
-                })
+                    if (checkData.exists === true) {
+                        Swal.showValidationMessage("此帳號已存在，請更換其他帳號");
+                        return;
+                    }
+
+                    resolve({ companyName, contactPerson, companyPhone, newUser, newPass });
+                } catch (err) {
+                    Swal.showValidationMessage("檢查帳號失敗：" + err.message);
+                }
             });
-
-            const checkData = await checkRes.json();
-
-            if (checkData.exists === true) {
-                Swal.showValidationMessage("此帳號已存在，請更換其他帳號");
-                return false;
-            }
-
-            return { companyName, contactPerson, companyPhone, newUser, newPass };
         }
     });
 
     if (!step2Confirmed) return;
 
-
     // -------------------------
     // Step 3：送出註冊請求
-    -------------------------
+    // -------------------------
     Swal.fire({
         title: "註冊中…",
         text: "請稍候",
@@ -431,19 +427,16 @@ document.getElementById("btnApprove").onclick = async () => {
             userId: window.userId,
             displayName: window.userName,
             ip,
-
             companyName: adminData.companyName,
             contactPerson: adminData.contactPerson,
             newUser: adminData.newUser,
             newPass: adminData.newPass,
-
-            extraData: {
-                phone: adminData.companyPhone
-            }
+            extraData: { phone: adminData.companyPhone }
         };
 
         const res = await fetch(API_ENDPOINT, {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
@@ -465,7 +458,6 @@ document.getElementById("btnApprove").onclick = async () => {
     }
 };
 
-
 // ===============================
 // 密碼強度檢查（顯示 + 驗證）
 // ===============================
@@ -478,7 +470,6 @@ function isPasswordStrong(pw) {
 }
 
 function checkPasswordStrength(pw) {
-
     let score = 0;
     if (/[A-Z]/.test(pw)) score++;
     if (/[a-z]/.test(pw)) score++;
@@ -489,6 +480,7 @@ function checkPasswordStrength(pw) {
     const levels = ["極弱", "弱", "普通", "中等", "強"];
     return levels[score - 1] || "極弱";
 }
+
 
 // ======== 員工註冊 ========
 document.getElementById("btnEmployeeRegister").onclick = async () => {
