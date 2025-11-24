@@ -129,6 +129,7 @@ async function updateUserInfo() {
     window.userIP = ip;
     document.getElementById("userInfo").textContent = `${window.userName} 您好`;
 
+    // 取得公司網路 IP
     try {
         const ipRes = await fetch(`${API_ENDPOINT}?action=getUserConfig&userId=${window.userId}`);
         const ipData = await ipRes.json();
@@ -141,6 +142,18 @@ async function updateUserInfo() {
     s.style.color = isCompany ? "#008000" : "#FF0000";
     s.style.backgroundColor = isCompany ? "rgba(144,238,144,0.6)" : "rgba(255,182,193,0.3)";
     s.style.padding = "5px 15px"; s.style.borderRadius="20px"; s.style.display="inline-block"; s.style.fontWeight="bold";
+
+    // 打卡按鈕是否可點
+    const btns = [btnStart, btnEnd, btnMakeup];
+    btns.forEach(b=>{
+        b.disabled = !isCompany;
+        if(!isCompany){ b.style.background = "#ccc"; b.style.cursor = "not-allowed"; }
+    });
+
+    window.userReady = true;
+}
+
+
 
     // 只處理上班/下班按鈕
     const btns = [btnStart, btnEnd];
