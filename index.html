@@ -29,6 +29,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
 #btnReturn { background:#d3d3d3; color:black; }  
 #todayRecords { border:1px solid #ccc; border-radius:8px; padding:10px; min-height:50px; font-size:16px; background: #fafafa; width:100%; box-sizing:border-box; }
 
+/* ===== 統一員工註冊與管理員註冊按鈕 ===== */
 .register-btn {
     flex:1 1 0;
     padding:12px 0;       
@@ -91,7 +92,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
 </div>
 
 <script>
-const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwi8YWHapM6mPwH-ACu_8b6bognpRnjYWqlLlFj4pk2MShq_uX2TGp9CUoKXJhS4s2AfA/exec";
+const API_ENDPOINT = "https://script.google.com/macros/s/AKfycby_irDoATDgEdvbCIy7Ax8SKyWZ1kNxmEMm3w3xesVtLyRRD5Ia0TM9ixp4Bmr22DMA1w/exec";
 const SYSTEM_ADMIN_USER = "admin";
 const SYSTEM_ADMIN_PASS = "N7X4K9Q2L8R5B1Z6";
 
@@ -127,7 +128,6 @@ async function updateUserInfo() {
     window.userIP = ip;
     document.getElementById("userInfo").textContent = `${window.userName} 您好`;
 
-    // 假設公司網路設定
     try {
         const ipRes = await fetch(`${API_ENDPOINT}?action=getUserConfig&userId=${window.userId}`);
         const ipData = await ipRes.json();
@@ -141,8 +141,9 @@ async function updateUserInfo() {
     s.style.backgroundColor = isCompany ? "rgba(144,238,144,0.6)" : "rgba(255,182,193,0.3)";
     s.style.padding = "5px 15px"; s.style.borderRadius="20px"; s.style.display="inline-block"; s.style.fontWeight="bold";
 
-    // 上班/下班按鈕
-    [btnStart, btnEnd].forEach(b=>{
+    // 只處理上班/下班按鈕
+    const btns = [btnStart, btnEnd];
+    btns.forEach(b=>{
         b.disabled = !isCompany;
         if(!isCompany){ b.style.background = "#ccc"; b.style.cursor = "not-allowed"; }
     });
@@ -151,7 +152,7 @@ async function updateUserInfo() {
 }
 
 // ======== 打卡函式 ========
-async function performClockIn(status) {
+async function performClockIn(status, customDate = "", customTime = "") {
     if (!window.userReady) {
         Swal.fire({ icon:"info", title:"請稍候", html:"使用者資料尚未載入", timer:1500, showConfirmButton:false });
         return;
@@ -176,6 +177,7 @@ async function performClockIn(status) {
     circle.style.strokeDashoffset = circumference;
 
     let progress = 0;
+
     function animate() {
         progress = Math.min(progress + 0.005, 1);
         circle.style.strokeDashoffset = circumference * (1 - progress);
@@ -185,27 +187,53 @@ async function performClockIn(status) {
         const bC = Math.round(startColor.b*(1-progress) + endColor.b*progress);
         circle.style.stroke = `rgb(${rC},${gC},${bC})`;
 
-        if(progress < 1) requestAnimationFrame(animate);
-        else { wrapper.style.transition="opacity 0.6s"; wrapper.style.opacity=0; setTimeout(()=>{wrapper.style.display="none"; wrapper.style.opacity=1;},600);}
+        if(progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            wrapper.style.transition = "opacity 0.6s";
+            wrapper.style.opacity = 0;
+            setTimeout(() => { wrapper.style.display = "none"; wrapper.style.opacity = 1; }, 600);
+        }
     }
     requestAnimationFrame(animate);
 
+    let apiData = null;
     try {
         const res = await fetch(API_ENDPOINT, {
-            method:"POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: window.userId, displayName: window.userName, status, ip })
+            method: "POST",
+            body: JSON.stringify({ userId: window.userId, displayName: window.userName, status, ip, customDate, customTime })
         });
-        const data = await res.json();
+        apiData = await res.json();
+    } catch(err) { apiData = { message:"失敗" }; }
 
-        if(data.status==="success" && window.COMPANY_IPS.includes(ip)){
-            Swal.fire({icon:"success", title:"🎉 打卡成功！", html:`<strong>打卡時間：</strong> ${data.date} ${data.time}`, showConfirmButton:false, timer:2000, backdrop:"rgba(0,0,0,0.5)"});
-        } else if(data.status==="success"){
-            Swal.fire({icon:"warning", title:"⚠ 非公司網路", html:"◎ 異地打卡請忽略 ◎", showConfirmButton:false, timer:2000, backdrop:"rgba(0,0,0,0.5)"});
-        } else{
-            Swal.fire({icon:"error", title:"😥 今日已打卡", text:"重複打卡", showConfirmButton:false, timer:2000, backdrop:"rgba(0,0,0,0.5)"});
-        }
-    } catch(err){ Swal.fire({icon:"error", title:"打卡失敗", text:err.message}); }
+    if(apiData.message.includes("成功") && window.COMPANY_IPS.includes(ip)) {
+        Swal.fire({
+            icon: "success",
+            title: "🎉 打卡成功！",
+            html: `<strong>打卡時間：</strong> ${apiData.date} ${apiData.time}`,
+            showConfirmButton: false,
+            timer: 2000,
+            backdrop: "rgba(0,0,0,0.5)"
+        });
+    } else if(apiData.message.includes("成功")) {
+        Swal.fire({
+            icon: "warning",
+            title: `<span style="font-size:20px;color:#e67e22;">⚠ 非公司網路</span>`,
+            html: `<div style="font-size:16px;color:#3498db;font-weight:bold;margin-top:8px;">◎ 異地打卡請忽略 ◎</div>`,
+            showConfirmButton: false,
+             timer: 2000,
+            backdrop: "rgba(0,0,0,0.5)"
+        });
+    } else {
+        Swal.fire({
+            icon: "error",
+            title: "😥 今日已打卡",
+            html: "重複打卡",
+            showConfirmButton: false,
+             timer: 2000,
+            backdrop: "rgba(0,0,0,0.5)"
+        });
+    }
 
     updateTodayRecords();
 }
@@ -213,7 +241,7 @@ async function performClockIn(status) {
 btnStart.onclick = () => performClockIn("上班");
 btnEnd.onclick = () => performClockIn("下班");
 
-// ======== 今日/查詢紀錄 ========
+// ======== 查詢功能 ========
 async function updateTodayRecords() {
     const today = new Date().toLocaleDateString("zh-TW").replace(/\//g,"/");
     try {
@@ -239,158 +267,60 @@ async function searchDateRecords() {
     } catch(err){ document.getElementById("todayRecords").innerHTML=`${dateStr} 查詢失敗`; }
 }
 
-// ======== 管理員註冊 ======== 
+// ======== 管理員註冊 ========
 document.getElementById("btnApprove").onclick = async () => {
-
-    // -------------------------
-    // Step 1：系統管理員登入驗證
-    // -------------------------
     const { value: loginData, isConfirmed: step1Confirmed } = await Swal.fire({
         title: "管理員驗證",
         html: `
           <input id="sysUser" class="swal2-input" placeholder="帳號">
-          <div style="position:relative;">
-            <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
-            <i id="toggleSysPass" class="fa fa-eye" style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
-          </div>
+          <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
         `,
-        didOpen: () => {
-            document.getElementById("toggleSysPass").onclick = () => {
-                const input = document.getElementById("sysPass");
-                input.type = input.type === "password" ? "text" : "password";
-            };
-        },
         confirmButtonText:"登入",
         cancelButtonText:"取消", 
         showCancelButton:true,
-        preConfirm: () => {
-            const u = document.getElementById("sysUser").value.trim();
-            const p = document.getElementById("sysPass").value.trim();
-            if (!u || !p) {
-                Swal.showValidationMessage("帳號密碼必填");
-                return false;
-            }
-            return { u, p };
+        preConfirm:()=>{
+            const u=document.getElementById("sysUser").value.trim();
+            const p=document.getElementById("sysPass").value.trim();
+            if(!u||!p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
+            return {u,p};
         }
     });
 
-    if (!step1Confirmed) return;
-
-    if (loginData.u !== SYSTEM_ADMIN_USER || loginData.p !== SYSTEM_ADMIN_PASS) {
-        Swal.fire({ icon:"error", title:"驗證失敗" });
+    if(!step1Confirmed) return;
+    if(loginData.u!==SYSTEM_ADMIN_USER || loginData.p!==SYSTEM_ADMIN_PASS){
+        Swal.fire({icon:"error",title:"驗證失敗"});
         return;
     }
 
-    // -------------------------
-    // Step 2：新增管理員資料
-    // -------------------------
+    // Step 2
     const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
-        title: "新增管理員資料",
-        html: `
+        title:"新增管理員資料",
+        html:`
           <input id="companyName" class="swal2-input" placeholder="公司名稱">
           <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
           <input id="companyPhone" class="swal2-input" placeholder="公司電話">
           <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
-
-          <div style="position:relative;">
-            <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
-            <i id="toggleNewPass" class="fa fa-eye" style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
-          </div>
-
-          <div style="position:relative;">
-            <input id="confirmPass" type="password" class="swal2-input" placeholder="確認密碼">
-            <i id="toggleConfirmPass" class="fa fa-eye" style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
-          </div>
-
-          <p id="pwStrength" style="text-align:left; margin-top:10px; font-size:14px; color:#444;">
-            密碼強度：
-          </p>
+          <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
         `,
-        didOpen: () => {
-            // 眼睛切換
-            document.getElementById("toggleNewPass").onclick = () => {
-                const i = document.getElementById("newPass");
-                i.type = i.type === "password" ? "text" : "password";
-            };
-            document.getElementById("toggleConfirmPass").onclick = () => {
-                const i = document.getElementById("confirmPass");
-                i.type = i.type === "password" ? "text" : "password";
-            };
-
-            // 密碼強度顯示
-            document.getElementById("newPass").addEventListener("input", () => {
-                const pw = document.getElementById("newPass").value;
-                document.getElementById("pwStrength").innerHTML = "密碼強度：" + checkPasswordStrength(pw);
-            });
-        },
         confirmButtonText:"註冊",
         cancelButtonText:"取消",
         showCancelButton:true,
-        preConfirm: () => {
-            return new Promise(async (resolve) => {
-                const companyName   = document.getElementById("companyName").value.trim();
-                const contactPerson = document.getElementById("contactPerson").value.trim();
-                const companyPhone  = document.getElementById("companyPhone").value.trim();
-                const newUser       = document.getElementById("newUser").value.trim();
-                const newPass       = document.getElementById("newPass").value.trim();
-                const confirmPass   = document.getElementById("confirmPass").value.trim();
+        preConfirm:()=> {
+            const companyName=document.getElementById("companyName").value.trim();
+            const contactPerson=document.getElementById("contactPerson").value.trim();
+            const companyPhone=document.getElementById("companyPhone").value.trim();
+            const newUser=document.getElementById("newUser").value.trim();
+            const newPass=document.getElementById("newPass").value.trim();
 
-                // 必填檢查
-                if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
-                    Swal.showValidationMessage("所有欄位皆為必填");
-                    resolve(false);
-                    return;
-                }
-
-                // 密碼一致性
-                if (newPass !== confirmPass) {
-                    Swal.showValidationMessage("密碼與確認密碼不一致");
-                    resolve(false);
-                    return;
-                }
-
-                // 密碼強度
-                if (!isPasswordStrong(newPass)) {
-                    Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
-                    resolve(false);
-                    return;
-                }
-
-                // 檢查帳號是否存在
-                try {
-                    const checkRes = await fetch(API_ENDPOINT, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "checkUserExist", username: newUser })
-                    });
-                    const checkData = await checkRes.json();
-
-                    if (checkData.exists) {
-                        Swal.showValidationMessage("此帳號已存在，請更換其他帳號");
-                        resolve(false);
-                        return;
-                    }
-
-                    resolve({ companyName, contactPerson, companyPhone, newUser, newPass });
-                } catch (err) {
-                    Swal.showValidationMessage("帳號檢查失敗：" + err.message);
-                    resolve(false);
-                }
-            });
+            if(!companyName||!contactPerson||!companyPhone||!newUser||!newPass){
+                Swal.showValidationMessage("所有欄位皆為必填");
+                return false;
+            }
+            return {companyName, contactPerson, companyPhone, newUser, newPass};
         }
     });
 
-    if (!step2Confirmed) return;
-
-    // -------------------------
-    // Step 3：送出註冊請求
-    // -------------------------
-    Swal.fire({
-        title: "註冊中…",
-        text: "請稍候",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-    });
+    if(!step2Confirmed) return;
 
     try {
         const ip = await getIP();
@@ -400,61 +330,35 @@ document.getElementById("btnApprove").onclick = async () => {
             userId: window.userId,
             displayName: window.userName,
             ip,
+
             companyName: adminData.companyName,
             contactPerson: adminData.contactPerson,
             newUser: adminData.newUser,
             newPass: adminData.newPass,
-            extraData: { phone: adminData.companyPhone }
+
+            extraData: {
+                phone: adminData.companyPhone
+            }
         };
 
         const res = await fetch(API_ENDPOINT, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
         const data = await res.json();
 
         Swal.fire({
-            icon: data.status === "success" ? "success" : "error",
-            title: data.message,
-            timer: 2000,
-            showConfirmButton: false
+            icon:data.status==="success"?"success":"error",
+            title:data.message,
+            timer:2000,
+            showConfirmButton:false
         });
 
-    } catch (err) {
-        Swal.fire({
-            icon: "error",
-            title: "註冊失敗",
-            text: err.message
-        });
+    } catch(err){
+        Swal.fire({icon:"error",title:"註冊失敗",text:err.message});
     }
 };
-
-// ===============================
-// 密碼強度檢查（驗證 + 顯示）
-// ===============================
-function isPasswordStrong(pw) {
-    return /[A-Z]/.test(pw) &&
-           /[a-z]/.test(pw) &&
-           /[0-9]/.test(pw) &&
-           /[^A-Za-z0-9]/.test(pw) &&
-           pw.length >= 8;
-}
-
-function checkPasswordStrength(pw) {
-    let score = 0;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[a-z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    if (pw.length >= 8) score++;
-
-    const levels = ["極弱", "弱", "普通", "中等", "強"];
-    return levels[score - 1] || "極弱";
-}
-
-
 
 // ======== 員工註冊 ========
 document.getElementById("btnEmployeeRegister").onclick = async () => {
