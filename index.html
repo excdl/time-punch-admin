@@ -90,7 +90,11 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
         <button class="register-btn" id="btnApprove">管理員註冊</button>
     </div>
 </div>
-
+<div style="position:relative;">
+  <input id="newPass" type="password" class="swal2-input" placeholder="新密碼">
+  <i id="toggleNewPass" class="fa fa-eye"
+     style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
+</div>
 <script>
 const API_ENDPOINT = "https://script.google.com/macros/s/AKfycby_irDoATDgEdvbCIy7Ax8SKyWZ1kNxmEMm3w3xesVtLyRRD5Ia0TM9ixp4Bmr22DMA1w/exec";
 const SYSTEM_ADMIN_USER = "admin";
@@ -268,6 +272,7 @@ async function searchDateRecords() {
 }
 
 // ======== 管理員註冊 ======== 
+// ======== 管理員註冊 ======== 
 document.getElementById("btnApprove").onclick = async () => {
 
     // -------------------------
@@ -279,8 +284,7 @@ document.getElementById("btnApprove").onclick = async () => {
           <input id="sysUser" class="swal2-input" placeholder="帳號">
           <div style="position:relative;">
             <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
-            <i id="toggleSysPass" class="fa fa-eye"
-               style="position:absolute; right:35px; top:14px; cursor:pointer;"></i>
+            <i id="toggleSysPass" class="fa fa-eye" style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
           </div>
         `,
         didOpen: () => {
@@ -319,19 +323,16 @@ document.getElementById("btnApprove").onclick = async () => {
           <input id="companyName" class="swal2-input" placeholder="公司名稱">
           <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
           <input id="companyPhone" class="swal2-input" placeholder="公司電話">
-
           <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
 
           <div style="position:relative;">
             <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
-            <i id="toggleNewPass" class="fa fa-eye"
-               style="position:absolute; right:35px; top:14px; cursor:pointer;"></i>
+            <i id="toggleNewPass" class="fa fa-eye" style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
           </div>
 
           <div style="position:relative;">
             <input id="confirmPass" type="password" class="swal2-input" placeholder="確認密碼">
-            <i id="toggleConfirmPass" class="fa fa-eye"
-               style="position:absolute; right:35px; top:14px; cursor:pointer;"></i>
+            <i id="toggleConfirmPass" class="fa fa-eye" style="position:absolute; right:10px; top:14px; cursor:pointer;"></i>
           </div>
 
           <p id="pwStrength" style="text-align:left; margin-top:10px; font-size:14px; color:#444;">
@@ -339,7 +340,7 @@ document.getElementById("btnApprove").onclick = async () => {
           </p>
         `,
         didOpen: () => {
-            // 密碼顯示切換
+            // 眼睛切換
             document.getElementById("toggleNewPass").onclick = () => {
                 const i = document.getElementById("newPass");
                 i.type = i.type === "password" ? "text" : "password";
@@ -349,7 +350,7 @@ document.getElementById("btnApprove").onclick = async () => {
                 i.type = i.type === "password" ? "text" : "password";
             };
 
-            // 密碼強度指示
+            // 密碼強度顯示
             document.getElementById("newPass").addEventListener("input", () => {
                 const pw = document.getElementById("newPass").value;
                 document.getElementById("pwStrength").innerHTML = "密碼強度：" + checkPasswordStrength(pw);
@@ -360,39 +361,43 @@ document.getElementById("btnApprove").onclick = async () => {
         showCancelButton:true,
         preConfirm: () => {
             return new Promise(async (resolve) => {
+                const companyName   = document.getElementById("companyName").value.trim();
+                const contactPerson = document.getElementById("contactPerson").value.trim();
+                const companyPhone  = document.getElementById("companyPhone").value.trim();
+                const newUser       = document.getElementById("newUser").value.trim();
+                const newPass       = document.getElementById("newPass").value.trim();
+                const confirmPass   = document.getElementById("confirmPass").value.trim();
+
+                // 必填檢查
+                if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
+                    Swal.showValidationMessage("所有欄位皆為必填");
+                    resolve(false);
+                    return;
+                }
+
+                // 密碼一致性
+                if (newPass !== confirmPass) {
+                    Swal.showValidationMessage("密碼與確認密碼不一致");
+                    resolve(false);
+                    return;
+                }
+
+                // 密碼強度
+                if (!isPasswordStrong(newPass)) {
+                    Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
+                    resolve(false);
+                    return;
+                }
+
+                // 檢查帳號是否存在
                 try {
-                    const companyName   = document.getElementById("companyName").value.trim();
-                    const contactPerson = document.getElementById("contactPerson").value.trim();
-                    const companyPhone  = document.getElementById("companyPhone").value.trim();
-                    const newUser       = document.getElementById("newUser").value.trim();
-                    const newPass       = document.getElementById("newPass").value.trim();
-                    const confirmPass   = document.getElementById("confirmPass").value.trim();
-
-                    if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
-                        Swal.showValidationMessage("所有欄位皆為必填");
-                        resolve(false);
-                        return;
-                    }
-
-                    if (newPass !== confirmPass) {
-                        Swal.showValidationMessage("密碼與確認密碼不一致");
-                        resolve(false);
-                        return;
-                    }
-
-                    if (!isPasswordStrong(newPass)) {
-                        Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
-                        resolve(false);
-                        return;
-                    }
-
-                    // 前端檢查帳號是否已存在
                     const checkRes = await fetch(API_ENDPOINT, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ action: "checkUserExist", username: newUser })
                     });
                     const checkData = await checkRes.json();
+
                     if (checkData.exists) {
                         Swal.showValidationMessage("此帳號已存在，請更換其他帳號");
                         resolve(false);
@@ -400,9 +405,8 @@ document.getElementById("btnApprove").onclick = async () => {
                     }
 
                     resolve({ companyName, contactPerson, companyPhone, newUser, newPass });
-
                 } catch (err) {
-                    Swal.showValidationMessage("檢查帳號失敗：" + err.message);
+                    Swal.showValidationMessage("帳號檢查失敗：" + err.message);
                     resolve(false);
                 }
             });
@@ -441,6 +445,7 @@ document.getElementById("btnApprove").onclick = async () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
+
         const data = await res.json();
 
         Swal.fire({
@@ -460,7 +465,7 @@ document.getElementById("btnApprove").onclick = async () => {
 };
 
 // ===============================
-// 密碼強度檢查（顯示 + 驗證）
+// 密碼強度檢查（驗證 + 顯示）
 // ===============================
 function isPasswordStrong(pw) {
     return /[A-Z]/.test(pw) &&
@@ -481,6 +486,7 @@ function checkPasswordStrength(pw) {
     const levels = ["極弱", "弱", "普通", "中等", "強"];
     return levels[score - 1] || "極弱";
 }
+
 
 
 // ======== 員工註冊 ========
