@@ -293,72 +293,64 @@ document.getElementById("btnApprove").onclick = async () => {
     }
 
     // Step 2
-    const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
-        title:"新增管理員資料",
-        html:`
-          <input id="companyName" class="swal2-input" placeholder="公司名稱">
-          <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
-          <input id="companyPhone" class="swal2-input" placeholder="公司電話">
-          <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
-          <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
-        `,
-        confirmButtonText:"註冊",
-        cancelButtonText:"取消",
-        showCancelButton:true,
-        preConfirm:()=> {
-            const companyName=document.getElementById("companyName").value.trim();
-            const contactPerson=document.getElementById("contactPerson").value.trim();
-            const companyPhone=document.getElementById("companyPhone").value.trim();
-            const newUser=document.getElementById("newUser").value.trim();
-            const newPass=document.getElementById("newPass").value.trim();
+    // Step 2: 新增管理員資料 + 密碼即時驗證與匹配提示
+const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
+    title:"新增管理員資料",
+    html:`
+      <input id="companyName" class="swal2-input" placeholder="公司名稱">
+      <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
+      <input id="companyPhone" class="swal2-input" placeholder="公司電話">
+      <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
+      <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
+      <input id="confirmPass" type="password" class="swal2-input" placeholder="再次輸入密碼">
+      <div id="passwordError" style="margin-top:5px; font-size:0.9em;"></div>
+    `,
+    confirmButtonText:"註冊",
+    cancelButtonText:"取消",
+    showCancelButton:true,
+    didOpen: () => {
+        const newPassInput = document.getElementById("newPass");
+        const confirmPassInput = document.getElementById("confirmPass");
+        const errorDiv = document.getElementById("passwordError");
 
-            if(!companyName||!contactPerson||!companyPhone||!newUser||!newPass){
-                Swal.showValidationMessage("所有欄位皆為必填");
-                return false;
+        function checkMatch() {
+            if(confirmPassInput.value) {
+                if(newPassInput.value !== confirmPassInput.value){
+                    errorDiv.textContent = "兩次密碼不一致 ❌";
+                    errorDiv.style.color = "red";
+                } else {
+                    errorDiv.textContent = "密碼匹配 ✅";
+                    errorDiv.style.color = "green";
+                }
+            } else {
+                errorDiv.textContent = "";
             }
-            return {companyName, contactPerson, companyPhone, newUser, newPass};
         }
-    });
 
-    if(!step2Confirmed) return;
+        newPassInput.addEventListener("input", checkMatch);
+        confirmPassInput.addEventListener("input", checkMatch);
+    },
+    preConfirm:()=> {
+        const companyName = document.getElementById("companyName").value.trim();
+        const contactPerson = document.getElementById("contactPerson").value.trim();
+        const companyPhone = document.getElementById("companyPhone").value.trim();
+        const newUser = document.getElementById("newUser").value.trim();
+        const newPass = document.getElementById("newPass").value.trim();
+        const confirmPass = document.getElementById("confirmPass").value.trim();
 
-    try {
-        const ip = await getIP();
+        if(!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass){
+            Swal.showValidationMessage("所有欄位皆為必填");
+            return false;
+        }
 
-        const payload = {
-            action: "registerAdmin",
-            userId: window.userId,
-            displayName: window.userName,
-            ip,
+        if(newPass !== confirmPass){
+            Swal.showValidationMessage("兩次密碼不一致");
+            return false;
+        }
 
-            companyName: adminData.companyName,
-            contactPerson: adminData.contactPerson,
-            newUser: adminData.newUser,
-            newPass: adminData.newPass,
-
-            extraData: {
-                phone: adminData.companyPhone
-            }
-        };
-
-        const res = await fetch(API_ENDPOINT, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        Swal.fire({
-            icon:data.status==="success"?"success":"error",
-            title:data.message,
-            timer:2000,
-            showConfirmButton:false
-        });
-
-    } catch(err){
-        Swal.fire({icon:"error",title:"註冊失敗",text:err.message});
+        return {companyName, contactPerson, companyPhone, newUser, newPass};
     }
-};
+});
 
 // ======== 員工註冊 ========
 document.getElementById("btnEmployeeRegister").onclick = async () => {
