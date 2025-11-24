@@ -93,7 +93,7 @@ body { font-family: Arial; display:flex; justify-content:center; padding:20px; b
 </div>
 
 <script>
-const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzF9VnFTTXXpFUv2w5PWH9DSzqkKf4I72ZINYvsvydcty3X9f-LUdMlCfXUGCFp_P6Y5Q/exec";
+const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxdG_en8I97DxqLGWLvdnHvyEXlRZKgGwZJ05CKaVPgqFaCE5KZiyvJcOFMDz7fURVToA/exec";
 const SYSTEM_ADMIN_USER = "admin";
 const SYSTEM_ADMIN_PASS = "N7X4K9Q2L8R5B1Z6";
 
@@ -153,7 +153,6 @@ async function updateUserInfo() {
     window.userReady = true;
 }
 
-// ======== 打卡函式 ========
 // ===== 打卡函式（慢速動畫 + API 後立即彈窗 + 動畫完成自動收起） =====
 async function performClockIn(status, customDate = "", customTime = "", isMakeup = false) {
     if (!window.userReady) {
