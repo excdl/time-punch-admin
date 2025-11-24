@@ -268,59 +268,160 @@ async function searchDateRecords() {
 }
 
 // ======== 管理員註冊 ========
+// ======== 管理員註冊 ========
 document.getElementById("btnApprove").onclick = async () => {
+
+    // -------------------------
+    // Step 1：系統管理員登入驗證
+    -------------------------
     const { value: loginData, isConfirmed: step1Confirmed } = await Swal.fire({
         title: "管理員驗證",
         html: `
           <input id="sysUser" class="swal2-input" placeholder="帳號">
-          <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
+          <div style="position:relative;">
+            <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
+            <i id="toggleSysPass" class="fa fa-eye"
+               style="position:absolute; right:35px; top:14px; cursor:pointer;"></i>
+          </div>
         `,
+        didOpen: () => {
+            document.getElementById("toggleSysPass").onclick = () => {
+                const input = document.getElementById("sysPass");
+                input.type = input.type === "password" ? "text" : "password";
+            };
+        },
         confirmButtonText:"登入",
         cancelButtonText:"取消", 
         showCancelButton:true,
-        preConfirm:()=>{
-            const u=document.getElementById("sysUser").value.trim();
-            const p=document.getElementById("sysPass").value.trim();
-            if(!u||!p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
-            return {u,p};
+        preConfirm: () => {
+            const u = document.getElementById("sysUser").value.trim();
+            const p = document.getElementById("sysPass").value.trim();
+            if (!u || !p) {
+                Swal.showValidationMessage("帳號密碼必填");
+                return false;
+            }
+            return { u, p };
         }
     });
 
-    if(!step1Confirmed) return;
-    if(loginData.u!==SYSTEM_ADMIN_USER || loginData.p!==SYSTEM_ADMIN_PASS){
-        Swal.fire({icon:"error",title:"驗證失敗"});
+    if (!step1Confirmed) return;
+
+    if (loginData.u !== SYSTEM_ADMIN_USER || loginData.p !== SYSTEM_ADMIN_PASS) {
+        Swal.fire({ icon:"error", title:"驗證失敗" });
         return;
     }
 
-    // Step 2
+
+    // -------------------------
+    // Step 2：新增管理員資料
+    -------------------------
     const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
-        title:"新增管理員資料",
-        html:`
+        title: "新增管理員資料",
+        html: `
           <input id="companyName" class="swal2-input" placeholder="公司名稱">
           <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
           <input id="companyPhone" class="swal2-input" placeholder="公司電話">
+
           <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
-          <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
+
+          <div style="position:relative;">
+            <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
+            <i id="toggleNewPass" class="fa fa-eye"
+               style="position:absolute; right:35px; top:14px; cursor:pointer;"></i>
+          </div>
+
+          <div style="position:relative;">
+            <input id="confirmPass" type="password" class="swal2-input" placeholder="確認密碼">
+            <i id="toggleConfirmPass" class="fa fa-eye"
+               style="position:absolute; right:35px; top:14px; cursor:pointer;"></i>
+          </div>
+
+          <p id="pwStrength" style="text-align:left; margin-top:10px; font-size:14px; color:#444;">
+            密碼強度：
+          </p>
         `,
+        didOpen: () => {
+
+            // --- 密碼顯示切換 ---
+            document.getElementById("toggleNewPass").onclick = () => {
+                const i = document.getElementById("newPass");
+                i.type = i.type === "password" ? "text" : "password";
+            };
+            document.getElementById("toggleConfirmPass").onclick = () => {
+                const i = document.getElementById("confirmPass");
+                i.type = i.type === "password" ? "text" : "password";
+            };
+
+            // --- 密碼強度指示 ---
+            document.getElementById("newPass").addEventListener("input", () => {
+                const pw = document.getElementById("newPass").value;
+                const strengthText = checkPasswordStrength(pw);
+                document.getElementById("pwStrength").innerHTML = "密碼強度：" + strengthText;
+            });
+        },
+
         confirmButtonText:"註冊",
         cancelButtonText:"取消",
         showCancelButton:true,
-        preConfirm:()=> {
-            const companyName=document.getElementById("companyName").value.trim();
-            const contactPerson=document.getElementById("contactPerson").value.trim();
-            const companyPhone=document.getElementById("companyPhone").value.trim();
-            const newUser=document.getElementById("newUser").value.trim();
-            const newPass=document.getElementById("newPass").value.trim();
+        preConfirm: async () => {
 
-            if(!companyName||!contactPerson||!companyPhone||!newUser||!newPass){
+            const companyName   = document.getElementById("companyName").value.trim();
+            const contactPerson = document.getElementById("contactPerson").value.trim();
+            const companyPhone  = document.getElementById("companyPhone").value.trim();
+            const newUser       = document.getElementById("newUser").value.trim();
+            const newPass       = document.getElementById("newPass").value.trim();
+            const confirmPass   = document.getElementById("confirmPass").value.trim();
+
+            // 必填檢查
+            if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
                 Swal.showValidationMessage("所有欄位皆為必填");
                 return false;
             }
-            return {companyName, contactPerson, companyPhone, newUser, newPass};
+
+            // 密碼兩次需一致
+            if (newPass !== confirmPass) {
+                Swal.showValidationMessage("密碼與確認密碼不一致");
+                return false;
+            }
+
+            // 密碼強度檢查
+            if (!isPasswordStrong(newPass)) {
+                Swal.showValidationMessage("密碼必須包含大小寫、數字、特殊字元，且至少 8 碼");
+                return false;
+            }
+
+            // 前端 AJAX → 檢查帳號是否存在
+            const checkRes = await fetch(API_ENDPOINT, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "checkUserExist",
+                    username: newUser
+                })
+            });
+
+            const checkData = await checkRes.json();
+
+            if (checkData.exists === true) {
+                Swal.showValidationMessage("此帳號已存在，請更換其他帳號");
+                return false;
+            }
+
+            return { companyName, contactPerson, companyPhone, newUser, newPass };
         }
     });
 
-    if(!step2Confirmed) return;
+    if (!step2Confirmed) return;
+
+
+    // -------------------------
+    // Step 3：送出註冊請求
+    -------------------------
+    Swal.fire({
+        title: "註冊中…",
+        text: "請稍候",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
 
     try {
         const ip = await getIP();
@@ -349,16 +450,45 @@ document.getElementById("btnApprove").onclick = async () => {
         const data = await res.json();
 
         Swal.fire({
-            icon:data.status==="success"?"success":"error",
-            title:data.message,
-            timer:2000,
-            showConfirmButton:false
+            icon: data.status === "success" ? "success" : "error",
+            title: data.message,
+            timer: 2000,
+            showConfirmButton: false
         });
 
-    } catch(err){
-        Swal.fire({icon:"error",title:"註冊失敗",text:err.message});
+    } catch (err) {
+        Swal.fire({
+            icon: "error",
+            title: "註冊失敗",
+            text: err.message
+        });
     }
 };
+
+
+// ===============================
+// 密碼強度檢查（顯示 + 驗證）
+// ===============================
+function isPasswordStrong(pw) {
+    return /[A-Z]/.test(pw) &&
+           /[a-z]/.test(pw) &&
+           /[0-9]/.test(pw) &&
+           /[^A-Za-z0-9]/.test(pw) &&
+           pw.length >= 8;
+}
+
+function checkPasswordStrength(pw) {
+
+    let score = 0;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[a-z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    if (pw.length >= 8) score++;
+
+    const levels = ["極弱", "弱", "普通", "中等", "強"];
+    return levels[score - 1] || "極弱";
+}
 
 // ======== 員工註冊 ========
 document.getElementById("btnEmployeeRegister").onclick = async () => {
