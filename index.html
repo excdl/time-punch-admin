@@ -1,3 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>奇可智能打卡系統</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+body { font-family: Arial; display:flex; justify-content:center; padding:20px; background:#f5f6fa; margin:0; }
+#controlPanel { background:white; padding:25px 20px; border-radius:15px; box-shadow:0 8px 20px rgba(0,0,0,0.1); width:95%; max-width:500px; display:flex; flex-direction:column; gap:20px; align-items:center; box-sizing:border-box; }
+#userInfo { text-align:center; font-size:26px; font-weight:bold; }
+#statusInfo { text-align:center; font-size:23px; padding:5px 15px; border-radius:20px; display:inline-block; }
+#dateTime { text-align:center; font-size:22px; }
+.buttons-container { display:flex; gap:10px; width:100%; flex-wrap:nowrap; }
+.buttons-container button { flex:1 1 0; min-width:80px; padding:10px 0; font-size:25px; border-radius:8px; cursor:pointer; font-weight:bold; border:none; white-space:nowrap; transition: all 0.2s ease; }
+.buttons-container button:hover{ transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+.buttons-container button:active{ transform: translateY(1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+#btnStart { background: linear-gradient(145deg, #3498db, #2980b9); color:white; } 
+#btnEnd { background: linear-gradient(145deg, #2ecc71, #27ae60); color:white; }   
+#btnMakeup { background: linear-gradient(145deg, #f39c12, #d35400); color:white; } 
+#countdownWrapper { width:120px; height:120px; position:relative; display:none; }
+#circleProgress { fill:none; stroke-width:12; stroke-linecap:round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+#countdownText { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-weight:bold; white-space:nowrap; }
+#querySection { width:100%; display:flex; flex-direction:column; gap:10px; }
+#querySection .queryRow { display:flex; gap:10px; width:100%; flex-wrap:nowrap; align-items:center; }
+#querySection input[type="date"] { flex:1 1 auto; min-width:100px; padding:8px 10px; font-size:14px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+#querySection button { flex:1 1 0; padding:8px 0; font-size:14px; font-weight:bold; border-radius:6px; border:none; cursor:pointer; white-space:nowrap; }
+#btnQuery { background:#d3d3d3; color:black; }  
+#btnReturn { background:#d3d3d3; color:black; }  
+#todayRecords { border:1px solid #ccc; border-radius:8px; padding:10px; min-height:50px; font-size:16px; background: #fafafa; width:100%; box-sizing:border-box; }
+
+/* ===== 統一員工註冊與管理員註冊按鈕 ===== */
+.register-btn {
+    flex:1 1 0;
+    padding:12px 0;       /* 固定垂直高度 */
+    font-size:18px;       /* 統一字體大小 */
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+    color:white;
+    white-space:nowrap;
+    transition: all 0.2s ease;
+    text-align:center;
+}
+
+#btnEmployeeRegister { background: linear-gradient(145deg,#3498db,#2980b9); }
+#btnApprove           { background: linear-gradient(145deg,#8e44ad,#663399); }
+
+.register-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.register-btn:active{ transform: translateY(1px);  box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+
+@media(max-width:400px){
+    .buttons-container button{ font-size:20px; }
+    #querySection input[type="date"]{ font-size:13px; }
+    #querySection button{ font-size:13px; }
+}
+</style>
+</head>
+<body>
+
+<div id="controlPanel">
+    <div id="userInfo">正在獲取使用者資訊...</div>
+    <div id="statusInfo"></div>
+    <div id="dateTime">載入中…</div>
+
+    <div class="buttons-container">
+        <button id="btnStart">上班</button>
+        <button id="btnEnd">下班</button>
+        <button id="btnMakeup">補打卡</button>
+    </div>
+
+    <div id="countdownWrapper">
+        <svg width="120" height="120">
+            <circle id="circleProgress" cx="60" cy="60" r="50"></circle>
+        </svg>
+        <div id="countdownText">打卡中...</div>
+    </div>
+
+    <div id="querySection">
+        <div class="queryRow">
+            <input type="date" id="queryDate">
+            <button id="btnQuery" onclick="searchDateRecords()">查詢</button>
+            <button id="btnReturn" onclick="clearSearch()">返回</button>
+        </div>
+        <div id="todayRecords">今日打卡紀錄：</div>
+    </div>
+
+    <div class="buttons-container">
+    <button class="register-btn" id="btnEmployeeRegister">員工註冊</button>
+    <button class="register-btn" id="btnApprove">管理員註冊</button>
+</div>
+
 <script>
 const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzF9VnFTTXXpFUv2w5PWH9DSzqkKf4I72ZINYvsvydcty3X9f-LUdMlCfXUGCFp_P6Y5Q/exec";
 const SYSTEM_ADMIN_USER = "admin";
@@ -349,6 +443,7 @@ window.onload = async () => { await updateUserInfo(); await updateTodayRecords()
 
 </body>
 </html>
+
 
 
 
