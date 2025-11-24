@@ -358,10 +358,44 @@ document.getElementById("btnApprove").onclick = async () => {
         }
     });
 
-    if (!step2Confirmed) return;
+   if (!step2Confirmed) return;
 
-    Swal.fire({ icon: "success", title: "管理員新增成功" });
-};
+const ip = await getIP(); // 取得使用者 IP
+
+// === 呼叫後端 registerAdmin ===
+try {
+    const res = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "registerAdmin",
+            userId: window.userId,        // LINE userId
+            displayName: window.userName, // 顯示名稱
+            ip,
+            companyName: adminData.companyName,
+            contactPerson: adminData.contactPerson,
+            newUser: adminData.newUser,
+            newPass: adminData.newPass,
+            extraData: { phone: adminData.companyPhone }
+        })
+    });
+
+    const data = await res.json();
+
+    Swal.fire({
+        icon: data.status === "success" ? "success" : "error",
+        title: data.message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+
+} catch (err) {
+    Swal.fire({
+        icon: "error",
+        title: "註冊失敗",
+        text: err.message
+    });
+}
 
 // ======== 員工註冊 ========
 document.getElementById("btnEmployeeRegister").onclick = async () => {
