@@ -348,7 +348,6 @@ document.getElementById("btnApprove").onclick = async () => {
             </span>
           </div>
 
-          <script>
             document.getElementById("togglePass").onclick = () => {
                 const p = document.getElementById("newPass");
                 const t = document.getElementById("togglePass");
@@ -361,7 +360,7 @@ document.getElementById("btnApprove").onclick = async () => {
                 if (p.type === "password") { p.type = "text"; t.textContent = "隱藏"; }
                 else { p.type = "password"; t.textContent = "顯示"; }
             };
-          </script>
+         
         `,
         showCancelButton:true,
         confirmButtonText:"註冊",
