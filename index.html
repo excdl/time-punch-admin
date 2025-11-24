@@ -292,97 +292,130 @@ async function searchDateRecords() {
 }
 
 // ======== 管理員註冊 ========
+// ========== ★★★ 管理員註冊（已加：確認密碼 + 顯示/隱藏） ★★★ ==========
 document.getElementById("btnApprove").onclick = async () => {
-    const { value: loginData, isConfirmed: step1Confirmed } = await Swal.fire({
+
+    // STEP 1：驗證系統管理員密碼
+    const { value: loginData, isConfirmed: step1 } = await Swal.fire({
         title: "管理員驗證",
         html: `
           <input id="sysUser" class="swal2-input" placeholder="帳號">
           <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
         `,
-        confirmButtonText:"登入",
-        cancelButtonText:"取消", 
         showCancelButton:true,
-        preConfirm:()=>{
-            const u=document.getElementById("sysUser").value.trim();
-            const p=document.getElementById("sysPass").value.trim();
-            if(!u||!p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
-            return {u,p};
+        confirmButtonText:"登入",
+        cancelButtonText:"取消",
+        preConfirm: () => {
+            const u = document.getElementById("sysUser").value.trim();
+            const p = document.getElementById("sysPass").value.trim();
+            if (!u || !p) {
+                Swal.showValidationMessage("帳號密碼必填");
+                return false;
+            }
+            return { u, p };
         }
     });
 
-    if(!step1Confirmed) return;
-    if(loginData.u!==SYSTEM_ADMIN_USER || loginData.p!==SYSTEM_ADMIN_PASS){
-        Swal.fire({icon:"error",title:"驗證失敗"});
+    if (!step1) return;
+
+    if (loginData.u !== SYSTEM_ADMIN_USER || loginData.p !== SYSTEM_ADMIN_PASS) {
+        Swal.fire({ icon:"error", title:"驗證失敗" });
         return;
     }
 
-    // Step 2：新增管理員資料（含密碼確認）
-    const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
-    title:"新增管理員資料",
-    html: `
-      <input id="companyName" class="swal2-input" placeholder="公司名稱">
-      <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
-      <input id="companyPhone" class="swal2-input" placeholder="公司電話">
-      <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
+    // STEP 2：新增管理員資料（已加確認密碼 + 顯示/隱藏）
+    const { value: adminData, isConfirmed: step2 } = await Swal.fire({
+        title: "新增管理員資料",
+        html: `
+          <input id="companyName" class="swal2-input" placeholder="公司名稱">
+          <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
+          <input id="companyPhone" class="swal2-input" placeholder="公司電話">
+          <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
 
-      <div style="position:relative;">
-        <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
-        <span id="togglePass"
-              style="position:absolute; right:18px; top:12px; cursor:pointer; font-size:14px; color:#007bff;">
-              顯示
-        </span>
-      </div>
+          <div style="position:relative;">
+            <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
+            <span id="togglePass" 
+                  style="position:absolute; right:18px; top:12px; cursor:pointer; color:#007bff;">
+                顯示
+            </span>
+          </div>
 
-      <div style="position:relative;">
-        <input id="confirmPass" type="password" class="swal2-input" placeholder="確認密碼">
-        <span id="toggleConfirmPass"
-              style="position:absolute; right:18px; top:12px; cursor:pointer; font-size:14px; color:#007bff;">
-              顯示
-        </span>
-      </div>
+          <div style="position:relative;">
+            <input id="confirmPass" type="password" class="swal2-input" placeholder="確認密碼">
+            <span id="toggleConfirmPass" 
+                  style="position:absolute; right:18px; top:12px; cursor:pointer; color:#007bff;">
+                顯示
+            </span>
+          </div>
 
-      <script>
-        // 密碼顯示/隱藏
-        document.getElementById("togglePass").onclick = () => {
-            const p = document.getElementById("newPass");
-            const t = document.getElementById("togglePass");
-            if (p.type === "password") { p.type = "text"; t.textContent = "隱藏"; }
-            else { p.type = "password"; t.textContent = "顯示"; }
-        };
-        document.getElementById("toggleConfirmPass").onclick = () => {
-            const p = document.getElementById("confirmPass");
-            const t = document.getElementById("toggleConfirmPass");
-            if (p.type === "password") { p.type = "text"; t.textContent = "隱藏"; }
-            else { p.type = "password"; t.textContent = "顯示"; }
-        };
-      </script>
-    `,
-    confirmButtonText:"註冊",
-    cancelButtonText:"取消",
-    showCancelButton:true,
+          <script>
+            document.getElementById("togglePass").onclick = () => {
+                const p = document.getElementById("newPass");
+                const t = document.getElementById("togglePass");
+                if (p.type === "password") { p.type = "text"; t.textContent = "隱藏"; }
+                else { p.type = "password"; t.textContent = "顯示"; }
+            };
+            document.getElementById("toggleConfirmPass").onclick = () => {
+                const p = document.getElementById("confirmPass");
+                const t = document.getElementById("toggleConfirmPass");
+                if (p.type === "password") { p.type = "text"; t.textContent = "隱藏"; }
+                else { p.type = "password"; t.textContent = "顯示"; }
+            };
+          </script>
+        `,
+        showCancelButton:true,
+        confirmButtonText:"註冊",
+        cancelButtonText:"取消",
 
-    preConfirm: () => {
-        const companyName = document.getElementById("companyName").value.trim();
-        const contactPerson = document.getElementById("contactPerson").value.trim();
-        const companyPhone = document.getElementById("companyPhone").value.trim();
-        const newUser = document.getElementById("newUser").value.trim();
-        const newPass = document.getElementById("newPass").value.trim();
-        const confirmPass = document.getElementById("confirmPass").value.trim();
+        preConfirm: () => {
+            const companyName = document.getElementById("companyName").value.trim();
+            const contactPerson = document.getElementById("contactPerson").value.trim();
+            const companyPhone = document.getElementById("companyPhone").value.trim();
+            const newUser = document.getElementById("newUser").value.trim();
+            const newPass = document.getElementById("newPass").value.trim();
+            const confirmPass = document.getElementById("confirmPass").value.trim();
 
-        if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
-            Swal.showValidationMessage("所有欄位皆為必填");
-            return false;
+            if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
+                Swal.showValidationMessage("所有欄位皆為必填");
+                return false;
+            }
+            if (newPass !== confirmPass) {
+                Swal.showValidationMessage("兩次密碼不一致");
+                return false;
+            }
+
+            return { companyName, contactPerson, companyPhone, newUser, newPass };
         }
+    });
 
-        if (newPass !== confirmPass) {
-            Swal.showValidationMessage("兩次輸入的密碼不一致！");
-            return false;
-        }
+    if (!step2) return;
 
-        return { companyName, contactPerson, companyPhone, newUser, newPass };
+    // 寫入 Google Sheet
+    const ip = await getIP();
+
+    try {
+        const res = await fetch(API_ENDPOINT, {
+            method:"POST",
+            body: JSON.stringify({
+                action: "registerAdmin",
+                userId: window.userId,
+                displayName: window.userName,
+                ip,
+                companyName: adminData.companyName,
+                contactPerson: adminData.contactPerson,
+                newUser: adminData.newUser,
+                newPass: adminData.newPass,
+                extraData: { phone: adminData.companyPhone }
+            })
+        });
+
+        const data = await res.json();
+        Swal.fire({ icon:data.status==="success"?"success":"error", title:data.message, timer:2000, showConfirmButton:false });
+
+    } catch(err) {
+        Swal.fire({ icon:"error", title:"註冊失敗", text:err.message });
     }
-});
-
+};
 
 
 // ======== 員工註冊 ========
