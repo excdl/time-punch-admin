@@ -268,55 +268,94 @@ async function searchDateRecords() {
 }
 
 // ======== 管理員註冊 ========
-document.getElementById("btnApprove").onclick = async () => {
+// ======== 管理員註冊 ========
+document.getElementById("btnApprove").onclick = async () => { 
+    // Step 1: 管理員登入驗證
     const { value: loginData, isConfirmed: step1Confirmed } = await Swal.fire({
         title: "管理員驗證",
         html: `
           <input id="sysUser" class="swal2-input" placeholder="帳號">
           <input id="sysPass" type="password" class="swal2-input" placeholder="密碼">
         `,
-        confirmButtonText:"登入",
-        cancelButtonText:"取消", 
-        showCancelButton:true,
-        preConfirm:()=>{
-            const u=document.getElementById("sysUser").value.trim();
-            const p=document.getElementById("sysPass").value.trim();
-            if(!u||!p){ Swal.showValidationMessage("帳號密碼必填"); return false; }
-            return {u,p};
+        confirmButtonText: "登入",
+        cancelButtonText: "取消",
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => {
+            const u = Swal.getPopup().querySelector('#sysUser').value.trim();
+            const p = Swal.getPopup().querySelector('#sysPass').value.trim();
+            if (!u || !p) {
+                Swal.showValidationMessage("帳號密碼必填");
+                return false;
+            }
+            return { u, p };
         }
     });
 
-    if(!step1Confirmed) return;
-    if(loginData.u!==SYSTEM_ADMIN_USER || loginData.p!==SYSTEM_ADMIN_PASS){
-        Swal.fire({icon:"error",title:"驗證失敗"});
+    if (!step1Confirmed) return;
+
+    if (loginData.u !== SYSTEM_ADMIN_USER || loginData.p !== SYSTEM_ADMIN_PASS) {
+        Swal.fire({ icon: "error", title: "驗證失敗" });
         return;
     }
 
-    // Step 2
+    // Step 2: 新增管理員資料
     const { value: adminData, isConfirmed: step2Confirmed } = await Swal.fire({
-        title:"新增管理員資料",
-        html:`
+        title: "新增管理員資料",
+        html: `
           <input id="companyName" class="swal2-input" placeholder="公司名稱">
           <input id="contactPerson" class="swal2-input" placeholder="聯絡人">
           <input id="companyPhone" class="swal2-input" placeholder="公司電話">
           <input id="newUser" class="swal2-input" placeholder="新管理員帳號">
           <input id="newPass" type="password" class="swal2-input" placeholder="新管理員密碼">
+          <input id="confirmPass" type="password" class="swal2-input" placeholder="再次輸入密碼">
+          <div id="passwordError" style="margin-top:5px; font-size:0.9em;"></div>
         `,
-        confirmButtonText:"註冊",
-        cancelButtonText:"取消",
-        showCancelButton:true,
-        preConfirm:()=> {
-            const companyName=document.getElementById("companyName").value.trim();
-            const contactPerson=document.getElementById("contactPerson").value.trim();
-            const companyPhone=document.getElementById("companyPhone").value.trim();
-            const newUser=document.getElementById("newUser").value.trim();
-            const newPass=document.getElementById("newPass").value.trim();
+        confirmButtonText: "註冊",
+        cancelButtonText: "取消",
+        showCancelButton: true,
+        focusConfirm: false,
+        didOpen: () => {
+            const newPassInput = Swal.getPopup().querySelector("#newPass");
+            const confirmPassInput = Swal.getPopup().querySelector("#confirmPass");
+            const errorDiv = Swal.getPopup().querySelector("#passwordError");
 
-            if(!companyName||!contactPerson||!companyPhone||!newUser||!newPass){
+            function checkMatch() {
+                if (confirmPassInput.value) {
+                    if (newPassInput.value !== confirmPassInput.value) {
+                        errorDiv.textContent = "兩次密碼不一致 ❌";
+                        errorDiv.style.color = "red";
+                    } else {
+                        errorDiv.textContent = "密碼匹配 ✅";
+                        errorDiv.style.color = "green";
+                    }
+                } else {
+                    errorDiv.textContent = "";
+                }
+            }
+
+            newPassInput.addEventListener("input", checkMatch);
+            confirmPassInput.addEventListener("input", checkMatch);
+        },
+        preConfirm: () => {
+            const companyName = Swal.getPopup().querySelector("#companyName").value.trim();
+            const contactPerson = Swal.getPopup().querySelector("#contactPerson").value.trim();
+            const companyPhone = Swal.getPopup().querySelector("#companyPhone").value.trim();
+            const newUser = Swal.getPopup().querySelector("#newUser").value.trim();
+            const newPass = Swal.getPopup().querySelector("#newPass").value.trim();
+            const confirmPass = Swal.getPopup().querySelector("#confirmPass").value.trim();
+
+            if (!companyName || !contactPerson || !companyPhone || !newUser || !newPass || !confirmPass) {
                 Swal.showValidationMessage("所有欄位皆為必填");
                 return false;
             }
-            return {companyName, contactPerson, companyPhone, newUser, newPass};
+
+            if (newPass !== confirmPass) {
+                Swal.showValidationMessage("兩次密碼不一致");
+                return false;
+            }
+
+            return { companyName, contactPerson, companyPhone, newUser, newPass };
         }
     });
 
